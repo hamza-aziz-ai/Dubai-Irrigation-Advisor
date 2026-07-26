@@ -97,8 +97,8 @@ the surface accepts `infiltration_mm_hr × STORM_DURATION_HR`, with
 short, intense convective storms that produce most Gulf rainfall. A longer
 assumption would let more water infiltrate and would understate runoff.
 
-This term only matters on the ~4% of Dubai days with measurable rain, but on
-those days the rainfall is intense enough that it is not negligible.
+This term only matters on the 6.5% of Dubai days exceeding 0.5 mm of rain,
+but on those days the rainfall is intense enough that it is not negligible.
 
 ## Stress coefficient
 

@@ -35,19 +35,26 @@ from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK_DIR = ROOT / "notebooks"
 
-PREAMBLE = """\
-import sys
-from pathlib import Path
+def preamble(*helpers: str) -> str:
+    """Notebook setup, importing only the viz helpers that notebook uses.
 
-sys.path.insert(0, str(Path.cwd().parent / "src"))
-
-import numpy as np
-import matplotlib.pyplot as plt
-
-from irrigation.viz import apply_style, colour_for, dashes_for, marker_for, ACTUAL
-
-apply_style()
-"""
+    A single shared import line listing all of them left two or three unused
+    in every notebook. In a file whose whole purpose is to be read, an import
+    that is never called is a small lie about what the analysis depends on.
+    """
+    return (
+        "import sys\n"
+        "from pathlib import Path\n"
+        "\n"
+        'sys.path.insert(0, str(Path.cwd().parent / "src"))\n'
+        "\n"
+        "import numpy as np\n"
+        "import matplotlib.pyplot as plt\n"
+        "\n"
+        f"from irrigation.viz import apply_style, {', '.join(helpers)}\n"
+        "\n"
+        "apply_style()\n"
+    )
 
 
 # ==========================================================================
@@ -71,7 +78,7 @@ going further.
 global weather reanalysis. It is public, free, needs no account, and can be
 re-downloaded by anyone who wants to check this work.
 """),
-    ("code", PREAMBLE + """
+    ("code", preamble("ACTUAL") + """
 from irrigation.data.nasa_power import load_metadata, load_records, load_weather
 from irrigation.climate.et0_series import et0_for_day
 from irrigation.climate.dubai import normals_day
@@ -81,8 +88,11 @@ weather = load_weather()
 metadata = load_metadata()
 
 et0 = np.array([et0_for_day(day).et0_mm_day for day in weather])
-years = np.array([day.date.year for day in weather])
-months = np.array([day.date.month for day in weather])
+# From the records, whose `date` is never None - `DailyWeather.date` is
+# optional because a generated day has no calendar date. The two lists are
+# built one-to-one from the same source, so the indices still line up.
+years = np.array([record.date.year for record in records])
+months = np.array([record.date.month for record in records])
 
 cell = metadata["grid_cell_point"]
 print(f"Days of record : {len(records):,}")
@@ -142,7 +152,7 @@ axes[1].set_title("Water leaving the soil, against water arriving")
 axes[1].legend(loc="upper left")
 
 for index, value in enumerate(monthly_et0):
-    axes[1].annotate(f"{value:.1f}", (index, value), ha="center",
+    axes[1].annotate(f"{float(value):.1f}", (index, value), ha="center",
                      va="bottom", fontsize=9, color="#333333")
 
 plt.tight_layout()
@@ -150,9 +160,9 @@ plt.show()
 
 print(f"Average annual rainfall : {annual_rainfall:.0f} mm")
 print(f"Wettest month           : {labels[int(np.argmax(rain_by_month))]}, "
-      f"{max(rain_by_month):.2f} mm/day on average")
-print(f"Peak water demand       : {max(monthly_et0):.1f} mm/day")
-print(f"Ratio at the peak       : {max(monthly_et0) / rain_by_month[int(np.argmax(monthly_et0))]:.0f} to 1")
+      f"{float(max(rain_by_month)):.2f} mm/day on average")
+print(f"Peak water demand       : {float(max(monthly_et0)):.1f} mm/day")
+print(f"Ratio at the peak       : {float(max(monthly_et0) / rain_by_month[int(np.argmax(monthly_et0))]):.0f} to 1")
 """),
     ("md", """\
 **Read the lower panel first.** The blue bars are water leaving the soil; the
@@ -221,10 +231,10 @@ plt.tight_layout()
 plt.show()
 
 annual_real = np.array([et0[years == y].sum() for y in range(1995, 2025)])
-print(f"NASA observations, mean annual ET0 : {annual_real.mean():,.0f} mm")
-print(f"Published normals, annual ET0      : {synthetic_daily.sum():,.0f} mm")
+print(f"NASA observations, mean annual ET0 : {float(annual_real.mean()):,.0f} mm")
+print(f"Published normals, annual ET0      : {float(synthetic_daily.sum()):,.0f} mm")
 print(f"Disagreement                       : "
-      f"{abs(annual_real.mean() - synthetic_daily.sum()) / annual_real.mean() * 100:.1f}%")
+      f"{float(abs(annual_real.mean() - synthetic_daily.sum()) / annual_real.mean() * 100):.1f}%")
 """),
     ("md", """\
 **They agree to about 2%, and the largest monthly gap is under 0.4 mm/day.**
@@ -244,7 +254,7 @@ fig, ax = plt.subplots(figsize=(10, 4.6))
 
 ax.bar(np.arange(1995, 2025), annual_real, color="#56B4E9", label="Annual total")
 ax.axhline(annual_real.mean(), color="#D55E00", linewidth=2,
-           label=f"30-year mean ({annual_real.mean():,.0f} mm)")
+           label=f"30-year mean ({float(annual_real.mean()):,.0f} mm)")
 ax.set_ylabel("ET0 (mm per year)")
 ax.set_ylim(0, annual_real.max() * 1.15)
 ax.set_title("Year-to-year variation is small")
@@ -253,9 +263,9 @@ ax.legend(loc="lower right", ncol=2)
 plt.tight_layout()
 plt.show()
 
-print(f"Range across 30 years : {annual_real.min():,.0f} to {annual_real.max():,.0f} mm")
-print(f"Standard deviation    : {annual_real.std():,.0f} mm "
-      f"({annual_real.std() / annual_real.mean() * 100:.1f}% of the mean)")
+print(f"Range across 30 years : {float(annual_real.min()):,.0f} to {float(annual_real.max()):,.0f} mm")
+print(f"Standard deviation    : {float(annual_real.std()):,.0f} mm "
+      f"({float(annual_real.std() / annual_real.mean() * 100):.1f}% of the mean)")
 """),
     ("md", """\
 Annual demand varies by only about 3% from year to year. For a client this is
@@ -305,9 +315,9 @@ axes[1].tick_params(axis="x", rotation=30)
 plt.tight_layout()
 plt.show()
 
-print(f"Root-zone wetness: {wetness.min():.3f} to {wetness.max():.3f}, mean {wetness.mean():.3f}")
-print(f"Days with measurable rain: {(rain > 0.5).sum()} out of {len(rain):,} "
-      f"({(rain > 0.5).mean() * 100:.1f}%)")
+print(f"Root-zone wetness: {float(wetness.min()):.3f} to {float(wetness.max()):.3f}, mean {float(wetness.mean()):.3f}")
+print(f"Days with measurable rain: {int((rain > 0.5).sum())} out of {len(rain):,} "
+      f"({float((rain > 0.5).mean() * 100):.1f}%)")
 """),
     ("md", """\
 Two things stand out.
@@ -323,13 +333,13 @@ notebook tries to predict.
 
 ## Summary
 
-| Question | Answer |
-|---|---|
-| How much water does Dubai grass lose? | About 2,275 mm/year; 8.5 mm/day in July |
-| How reliable is that figure? | Two independent derivations agree within 2% |
-| Does rain help? | Effectively never - under 4% of days see measurable rain |
-| How much does demand vary year to year? | About 3%, so annual planning is easy |
-| When is the soil driest? | Summer - the same months demand peaks |
+| Question                                | Answer                                                   |
+|-----------------------------------------|----------------------------------------------------------|
+| How much water does Dubai grass lose?   | About 2,275 mm/year; 8.5 mm/day in July                  |
+| How reliable is that figure?            | Two independent derivations agree within 2%              |
+| Does rain help?                         | Barely - 6.5% of days exceed 0.5 mm, 109 mm a year total |
+| How much does demand vary year to year? | About 3%, so annual planning is easy                     |
+| When is the soil driest?                | Summer - the same months demand peaks                    |
 
 Next: [02 - Soil moisture sequence models](02_soil_moisture_sequence_models.ipynb)
 """),
@@ -369,7 +379,7 @@ benchmark is **climatology** - "whatever is normal for this date".
 Reporting only Question A would be flattering and close to meaningless. Both
 are run.
 """),
-    ("code", PREAMBLE + """
+    ("code", preamble("colour_for", "ACTUAL") + """
 from irrigation.data.nasa_power import load_records
 from irrigation.models import sequence as S
 
@@ -610,13 +620,13 @@ for task, name, metrics in sorted(summary, key=lambda row: (row[0], row[2]["rmse
 
 ## Summary
 
-| Finding | Detail |
-|---|---|
-| Networks beat persistence on RMSE | LSTM about 20% lower, driven by rain-response days |
-| Persistence beats networks on MAE | It is exactly right on the many days nothing happens |
-| Weather alone explains most of it | R2 around 0.72 with no moisture readings at all |
-| A sensor is worth more than a model | Forecast error is roughly 4x smaller than estimate error |
-| LSTM and GRU are equivalent here | Difference between them is smaller than the seed-to-seed spread |
+| Finding                             | Detail                                                          |
+|-------------------------------------|-----------------------------------------------------------------|
+| Networks beat persistence on RMSE   | LSTM about 20% lower, driven by rain-response days              |
+| Persistence beats networks on MAE   | It is exactly right on the many days nothing happens            |
+| Weather alone explains most of it   | R2 around 0.72 with no moisture readings at all                 |
+| A sensor is worth more than a model | Forecast error is roughly 4x smaller than estimate error        |
+| LSTM and GRU are equivalent here    | Difference between them is smaller than the seed-to-seed spread |
 
 **The honest conclusion:** the network adds real value, but a working sensor
 adds much more, and the choice of accuracy metric decides the winner. That last
@@ -659,7 +669,7 @@ day. Growth stops. Severe stress is not recoverable at all.
 RMSE weights those two identically. The field does not. So the evaluation here
 is in dirhams.
 """),
-    ("code", PREAMBLE + """
+    ("code", preamble("colour_for", "dashes_for", "marker_for") + """
 from irrigation.decision.policy import CostModel
 from irrigation.models.evaluate import render_table, run_comparison
 from irrigation.physics.crop import CROPS, SOILS
@@ -701,7 +711,7 @@ ax.set_title("Cost to run, lower is better")
 ax.grid(axis="x")
 
 for index, value in enumerate(costs[order]):
-    ax.annotate(f"{value:,.0f}", (value, index), va="center",
+    ax.annotate(f"{float(value):,.0f}", (value, index), va="center",
                 xytext=(6, 0), textcoords="offset points", fontsize=10)
 
 plt.tight_layout()
@@ -901,14 +911,14 @@ by prompt wording.
 
 ## Summary
 
-| Question | Answer |
-|---|---|
-| Which method is cheapest to run? | The FAO-56 water balance, at every ordinary cost ratio |
-| Does machine learning predict better? | Yes - and it still costs more |
-| Why? | It errs toward "too dry", over-waters, and the excess drains away |
-| Is that one bad model? | No - three different algorithms all do it |
-| Should the client trust a bare sensor? | No - drift makes it roughly 8x more expensive |
-| When would ML be right? | Only where crop stress is catastrophically costly |
+| Question                               | Answer                                                            |
+|----------------------------------------|-------------------------------------------------------------------|
+| Which method is cheapest to run?       | The FAO-56 water balance, at every ordinary cost ratio            |
+| Does machine learning predict better?  | Yes - and it still costs more                                     |
+| Why?                                   | It errs toward "too dry", over-waters, and the excess drains away |
+| Is that one bad model?                 | No - three different algorithms all do it                         |
+| Should the client trust a bare sensor? | No - drift makes it roughly 8x more expensive                     |
+| When would ML be right?                | Only where crop stress is catastrophically costly                 |
 """),
 ]
 

@@ -267,6 +267,22 @@ def test_annual_rainfall_matches_published_dubai_climatology(records):
     assert 70.0 < annual < 150.0, f"annual rainfall {annual:.0f} mm"
 
 
+def test_rain_day_frequency_matches_what_the_documents_claim(records):
+    """Guards a claim that was wrong in two places at once.
+
+    The notebook summary and AGRONOMY.md both said "under 4% of days see
+    measurable rain" while the cell directly above the claim printed 6.5%. The
+    documents were not checked against the series they described.
+
+    Asserted at the same 0.5 mm threshold the notebook prints, because "a rainy
+    day" means nothing without one - at 0.1 mm it is 11.6% of days and at
+    1.0 mm it is 4.6%.
+    """
+    wet_days = sum(1 for r in records if r.rainfall_mm > 0.5)
+    fraction = wet_days / len(records)
+    assert 0.05 < fraction < 0.08, f"{fraction:.1%} of days exceed 0.5 mm"
+
+
 def test_daily_rainfall_never_approaches_daily_demand(records):
     """The premise of the whole project, asserted rather than assumed.
 
