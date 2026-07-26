@@ -1,4 +1,5 @@
-"""Sequence models over real Dubai soil moisture.
+"""
+Sequence models over real Dubai soil moisture.
 
 WHAT THIS IS FOR, AND WHAT IT IS NOT FOR
 
@@ -49,14 +50,14 @@ from ..data.nasa_power import PowerRecord, to_daily_weather
 Task = Literal["forecast", "estimate"]
 CellType = Literal["lstm", "gru"]
 
-#: Weather-only drivers. No soil moisture at any lag, so this list is safe for
-#: both tasks; the ESTIMATE task uses exactly these and nothing else.
+# Weather-only drivers. No soil moisture at any lag, so this list is safe for
+# both tasks; the ESTIMATE task uses exactly these and nothing else.
 WEATHER_FEATURES = [
     "tmax_c", "tmin_c", "dewpoint_c", "solar_mj",
     "wind_2m_ms", "rainfall_mm", "et0_mm", "doy_sin", "doy_cos",
 ]
 
-#: Added only for the FORECAST task.
+# Added only for the FORECAST task.
 SOIL_FEATURES = ["wetness_root", "wetness_top"]
 
 TARGET = "wetness_root"
@@ -64,7 +65,8 @@ TARGET = "wetness_root"
 
 @dataclass(frozen=True)
 class SplitYears:
-    """Chronological split boundaries, inclusive.
+    """
+    Chronological split boundaries, inclusive.
 
     Years rather than random rows, and contiguous rather than interleaved.
     Randomly splitting a time series puts a Tuesday in train and the
@@ -109,7 +111,8 @@ class SequenceConfig:
 # Feature construction
 # --------------------------------------------------------------------------
 def build_frame(records: Sequence[PowerRecord]) -> tuple[np.ndarray, np.ndarray, list[_dt.date], list[str]]:
-    """Daily feature matrix, target vector, dates, and column names.
+    """
+    Daily feature matrix, target vector, dates, and column names.
 
     ET0 is computed here rather than left to the network. It is the physically
     meaningful combination of temperature, humidity, wind and radiation, and
@@ -152,7 +155,8 @@ def make_windows(
     lookback: int,
     task: Task,
 ) -> tuple[np.ndarray, np.ndarray, list[_dt.date]]:
-    """Slice into (window, target) pairs.
+    """
+    Slice into (window, target) pairs.
 
     FORECAST: days [i-lookback, i-1] predict day i. The window stops the day
     before the target, so tomorrow's weather is never visible - that would be
@@ -193,7 +197,8 @@ class Dataset:
 
 
 def build_dataset(records: Sequence[PowerRecord], config: SequenceConfig) -> Dataset:
-    """Windows, chronological split, and standardization fitted on train only.
+    """
+    Windows, chronological split, and standardization fitted on train only.
 
     The standardizer is the subtle leak. Fitting mean and standard deviation
     over the whole series lets the test years influence the scaling of the
@@ -247,7 +252,8 @@ def build_dataset(records: Sequence[PowerRecord], config: SequenceConfig) -> Dat
 # Model
 # --------------------------------------------------------------------------
 def build_network(config: SequenceConfig, n_features: int):
-    """LSTM or GRU followed by a linear head, as a torch Module.
+    """
+    LSTM or GRU followed by a linear head, as a torch Module.
 
     Imported lazily so that the rest of the package - physics, policy,
     dashboard - stays importable without torch installed.
@@ -255,7 +261,8 @@ def build_network(config: SequenceConfig, n_features: int):
     import torch.nn as nn
 
     class SoilMoistureRNN(nn.Module):
-        """Recurrent encoder over the lookback window, last state -> scalar.
+        """
+        Recurrent encoder over the lookback window, last state -> scalar.
 
         Only the final hidden state is used. Soil moisture responds to
         accumulated conditions over weeks, so the summary of the window is the
@@ -301,7 +308,8 @@ class TrainingResult:
 
 
 def train_sequence_model(dataset: Dataset, config: SequenceConfig) -> TrainingResult:
-    """Fit with early stopping on the validation years.
+    """
+    Fit with early stopping on the validation years.
 
     Early stopping watches the validation split and the best weights are
     restored at the end, so the reported test score comes from the model that
@@ -395,7 +403,8 @@ def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, floa
 
 
 def persistence_baseline(dataset: Dataset, config: SequenceConfig) -> np.ndarray:
-    """Tomorrow equals today. The bar the FORECAST task must clear.
+    """
+    Tomorrow equals today. The bar the FORECAST task must clear.
 
     Reads the last timestep's `wetness_root` back out of the standardized
     window, which is only possible because that feature exists for this task -
@@ -412,7 +421,8 @@ def persistence_baseline(dataset: Dataset, config: SequenceConfig) -> np.ndarray
 def climatology_baseline(
     records: Sequence[PowerRecord], dataset: Dataset, config: SequenceConfig
 ) -> np.ndarray:
-    """Day-of-year mean from the training years only.
+    """
+    Day-of-year mean from the training years only.
 
     A seasonal lookup table with no weather input at all. It is the honest
     floor for the ESTIMATE task: any model that cannot beat "what is normal

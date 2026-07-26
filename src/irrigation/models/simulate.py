@@ -1,4 +1,5 @@
-"""Season simulator and evaluation harness.
+"""
+Season simulator and evaluation harness.
 
 The simulator holds the *true* soil water state. A predictor only ever sees
 what a field deployment would see: a noisy probe reading, weather, and its own
@@ -108,7 +109,8 @@ def simulate_season(
     trigger_fraction: float = 0.85,
     collect_training_data: bool = False,
 ) -> tuple[SeasonResult, np.ndarray | None, np.ndarray | None]:
-    """Run one irrigation season.
+    """
+    Run one irrigation season.
 
     Returns the result and, optionally, (X, y) for training a supervised
     predictor. Training labels are the TRUE depletion - available only in

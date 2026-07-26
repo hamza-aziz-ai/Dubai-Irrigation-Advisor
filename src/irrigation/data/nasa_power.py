@@ -72,14 +72,14 @@ from ..physics.penman_monteith import saturation_vapour_pressure
 # --------------------------------------------------------------------------
 POWER_ENDPOINT = "https://power.larc.nasa.gov/api/temporal/daily/point"
 
-#: Maps each POWER parameter name to the column name used here, its unit, and
-#: a description.
-#:
-#: Units are recorded because POWER's own defaults differ by community: the
-#: AG community returns irradiance in MJ m-2 day-1, the RE community returns
-#: kWh m-2 day-1 for the same parameter name. A bare number labelled
-#: "radiation" is a 3.6x error waiting to happen, and it would show up as a
-#: plausible-looking ET0 rather than an obvious failure.
+# Maps each POWER parameter name to the column name used here, its unit, and
+# a description.
+#
+# Units are recorded because POWER's own defaults differ by community: the
+# AG community returns irradiance in MJ m-2 day-1, the RE community returns
+# kWh m-2 day-1 for the same parameter name. A bare number labelled
+# "radiation" is a 3.6x error waiting to happen, and it would show up as a
+# plausible-looking ET0 rather than an obvious failure.
 POWER_PARAMETERS: dict[str, tuple[str, str, str]] = {
     "T2M_MAX":          ("tmax_c",       "C",             "max air temperature at 2 m"),
     "T2M_MIN":          ("tmin_c",       "C",             "min air temperature at 2 m"),
@@ -95,12 +95,12 @@ POWER_PARAMETERS: dict[str, tuple[str, str, str]] = {
     "GWETPROF":         ("wetness_prof", "0-1",           "profile soil wetness"),
 }
 
-#: POWER substitutes this for missing values. It is a plausible-looking float,
-#: not a NaN, so it must be filtered explicitly, or it silently poisons means.
+# POWER substitutes this for missing values. It is a plausible-looking float,
+# not a NaN, so it must be filtered explicitly, or it silently poisons means.
 POWER_FILL_VALUE = -999.0
 
-#: Complete calendar years keep the chronological train/val/test split clean
-#: and make annual totals directly comparable to published climatology.
+# Complete calendar years keep the chronological train/val/test split clean
+# and make annual totals directly comparable to published climatology.
 DEFAULT_START = _dt.date(1995, 1, 1)
 DEFAULT_END = _dt.date(2024, 12, 31)
 
@@ -355,8 +355,8 @@ def load_weather(csv_path: Path = DEFAULT_CSV) -> list[DailyWeather]:
     return [to_daily_weather(record) for record in load_records(csv_path)]
 
 
-#: Elevation POWER reports for the Dubai grid cell, kept for reference. The
-#: project uses DUBAI_ALTITUDE_M for ET0 because the cell's mean elevation is
-#: pulled up by inland terrain, while the irrigated area near the coast is at
-#: roughly sea level - and Rso and atmospheric pressure both depend on it.
+# Elevation POWER reports for the Dubai grid cell, kept for reference. The
+# project uses DUBAI_ALTITUDE_M for ET0 because the cell's mean elevation is
+# pulled up by inland terrain, while the irrigated area near the coast is at
+# roughly sea level - and Rso and atmospheric pressure both depend on it.
 SITE_ALTITUDE_M = DUBAI_ALTITUDE_M

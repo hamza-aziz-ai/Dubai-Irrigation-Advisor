@@ -1,17 +1,14 @@
-"""Head-to-head evaluation of depletion predictors.
+"""
+Head-to-head evaluation of depletion predictors.
 
 Training and evaluation use DIFFERENT weather and sensor seeds. Sharing them
-would let a supervised model memorise the season and report a result that
+would let a supervised model memorize the season and report a result that
 cannot survive contact with next year's weather.
 """
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
 
-from ..decision.policy import CostModel
-from ..physics.crop import Crop, Soil
 from .predictors import (
     DepletionPredictor,
     GradientBoostingPredictor,
@@ -22,6 +19,8 @@ from .predictors import (
     XGBoostPredictor,
 )
 from .simulate import SeasonResult, simulate_season
+from ..decision.policy import CostModel
+from ..physics.crop import Crop, Soil
 
 TRAIN_SEEDS = [11, 23, 37, 51, 67]
 EVAL_WEATHER_SEED = 42
@@ -31,13 +30,15 @@ EVAL_SENSOR_SEED = 7
 def build_training_set(
     crop: Crop, soil: Soil, root_depth_m: float, kc: float, days: int = 120
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Collect (features, true depletion) across several simulated seasons.
+    """
+    Collect (features, true depletion) across several simulated seasons.
 
     The behaviour policy is the physics baseline: training data must come from
     a system that was operating sensibly, otherwise the model only ever sees
     states a broken controller visits.
     """
-    Xs, ys = [], []
+    Xs: list[np.ndarray] = []
+    ys: list[np.ndarray] = []
     for seed in TRAIN_SEEDS:
         _, X, y = simulate_season(
             PhysicsBalance(crop, soil), crop, soil,
@@ -45,13 +46,23 @@ def build_training_set(
             weather_seed=seed, sensor_seed=seed + 100,
             collect_training_data=True,
         )
+        # `simulate_season` returns None for both when collection is off. It
+        # is on here, so this cannot fire - but the coupling between the flag
+        # and the return lives in that function, not this one, and a silent
+        # None would surface much later as an unreadable numpy error.
+        if X is None or y is None:
+            raise RuntimeError(
+                "simulate_season returned no training data despite "
+                "collect_training_data=True"
+            )
         Xs.append(X)
         ys.append(y)
     return np.vstack(Xs), np.concatenate(ys)
 
 
 def default_predictors(crop: Crop, soil: Soil) -> list[DepletionPredictor]:
-    """The comparison set, ordered from no learning to most learning.
+    """
+    The comparison set, ordered from no learning to most learning.
 
     The three supervised models share a feature vector and a training set, so
     the spread between them measures the learning algorithm alone. They are
@@ -82,16 +93,21 @@ def run_comparison(
     kc = kc if kc is not None else crop.kc_mid
     predictors = predictors or default_predictors(crop, soil)
 
-    trained = False
-    X = y = None
+    # One optional tuple rather than two arrays plus a `trained` flag. The
+    # flag and the arrays could drift apart in principle, and nothing except
+    # reading the loop told you they could not - the None check now carries
+    # that guarantee where it is used.
+    training_set: tuple[np.ndarray, np.ndarray] | None = None
     results: list[SeasonResult] = []
 
     for predictor in predictors:
         if predictor.requires_training:
-            if not trained:
-                X, y = build_training_set(crop, soil, root_depth_m, kc, days)
-                trained = True
-            predictor.fit(X, y)
+            # Built once and shared, so every supervised model is fitted on
+            # identical data and a cost difference between them is the
+            # algorithm rather than the sample.
+            if training_set is None:
+                training_set = build_training_set(crop, soil, root_depth_m, kc, days)
+            predictor.fit(*training_set)
 
         result, _, _ = simulate_season(
             predictor, crop, soil,

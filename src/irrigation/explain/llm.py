@@ -28,31 +28,31 @@ from typing import Any
 
 from .advisor import Explanation, OfflineExplainer
 
-#: Ollama model. `gpt-oss:120b-cloud` runs on Ollama's servers rather than
-#: locally, so it needs network and a signed-in Ollama install. Point this at
-#: a local tag (`gpt-oss:20b`, `llama3.1:8b`) to keep everything on-machine.
+# Ollama model. `gpt-oss:120b-cloud` runs on Ollama's servers rather than
+# locally, so it needs network and a signed-in Ollama install. Point this at
+# a local tag (`gpt-oss:20b`, `llama3.1:8b`) to keep everything on-machine.
 DEFAULT_MODEL = os.environ.get("IRRIGATION_OLLAMA_MODEL", "gpt-oss:120b-cloud")
 
-#: Opt-in. The offline explainer stays the default so that tests, the demo and
-#: a fresh clone are deterministic and need nothing installed.
+# Opt-in. The offline explainer stays the default so that tests, the demo and
+# a fresh clone are deterministic and need nothing installed.
 ENGINE_ENV_VAR = "IRRIGATION_EXPLAIN_ENGINE"
 
-#: Matches integers and decimals, including negatives and thousands
-#: separators. Deliberately greedy about what counts as a number: anything it
-#: fails to catch is a number that escapes verification.
+# Matches integers and decimals, including negatives and thousands
+# separators. Deliberately greedy about what counts as a number: anything it
+# fails to catch is a number that escapes verification.
 _NUMBER_PATTERN = re.compile(r"-?\d[\d,]*\.?\d*")
 
-#: Numbers that carry no quantitative claim and would otherwise force a
-#: needless fallback - a model writing "FAO-56" or "24 hours" is not
-#: calculating anything about this field.
+# Numbers that carry no quantitative claim and would otherwise force a
+# needless fallback - a model writing "FAO-56" or "24 hours" is not
+# calculating anything about this field.
 _ALWAYS_ALLOWED = {0.0, 1.0, 2.0, 24.0, 56.0, 100.0}
 
-#: Unicode the models actually emit, mapped to the ASCII the rest of this
-#: repository uses. Applied BEFORE verification, not after, and that ordering
-#: is the whole point: `ET₀` and `mm day⁻¹` carry digits in subscript and
-#: superscript form, which `_NUMBER_PATTERN` cannot see. A model could state a
-#: fabricated `¹⁵` and walk straight past the grounding check. Folding those
-#: code points down to ASCII digits first closes the hole.
+# Unicode the models actually emit, mapped to the ASCII the rest of this
+# repository uses. Applied BEFORE verification, not after, and that ordering
+# is the whole point: `ET₀` and `mm day⁻¹` carry digits in subscript and
+# superscript form, which `_NUMBER_PATTERN` cannot see. A model could state a
+# fabricated `¹⁵` and walk straight past the grounding check. Folding those
+# code points down to ASCII digits first closes the hole.
 _UNICODE_REPLACEMENTS = {
     "‐": "-", "‑": "-", "‒": "-", "–": "-",
     "—": "-", "―": "-", "−": "-",
@@ -67,10 +67,10 @@ _UNICODE_REPLACEMENTS = {
     "₈": "8", "₉": "9",
 }
 
-#: A negative exponent bound directly to a unit symbol, as in `mm day-1` or
-#: `MJ m-2` once superscripts have been folded down. These are units, not
-#: quantities, and matching them as numbers would fail every explanation that
-#: writes ET0 in SI form.
+# A negative exponent bound directly to a unit symbol, as in `mm day-1` or
+# `MJ m-2` once superscripts have been folded down. These are units, not
+# quantities, and matching them as numbers would fail every explanation that
+# writes ET0 in SI form.
 _UNIT_EXPONENT_PATTERN = re.compile(r"(?<=[A-Za-z])-\d+\b")
 
 
@@ -283,7 +283,7 @@ class OllamaExplainer:
         )
         # gpt-oss models expose chain-of-thought in a separate `thinking`
         # field. Only `content` is used: reasoning text is unverified by
-        # construction and must never reach the grounds manager.
+        # construction and must never reach the grounds' manager.
         return normalize(response.message.content or "")
 
     def explain(self, context: dict[str, Any]) -> Explanation:

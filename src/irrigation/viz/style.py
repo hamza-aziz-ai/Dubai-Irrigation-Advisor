@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Any
 
-#: The eight-colour Okabe-Ito qualitative palette, in its published order.
+# The eight-colour Okabe-Ito qualitative palette, in its published order.
 OKABE_ITO = {
     "black": "#000000",
     "orange": "#E69F00",
@@ -31,13 +31,13 @@ OKABE_ITO = {
     "reddish_purple": "#CC79A7",
 }
 
-#: Ground truth is always black: it is the reference every other line is
-#: measured against, and black reads as authoritative in any medium.
+# Ground truth is always black: it is the reference every other line is
+# measured against, and black reads as authoritative in any medium.
 ACTUAL = OKABE_ITO["black"]
 GRID = "#D9D9D9"
 
-#: Stable assignment per predictor. Yellow is excluded throughout - it has
-#: poor contrast against white and is the palette's weakest line colour.
+# Stable assignment per predictor. Yellow is excluded throughout - it has
+# poor contrast against white and is the palette's weakest line colour.
 PREDICTOR_COLOURS = {
     "Physics (FAO-56 balance)": OKABE_ITO["blue"],
     "Sensor only": OKABE_ITO["vermillion"],
@@ -47,7 +47,7 @@ PREDICTOR_COLOURS = {
     "XGBoost": OKABE_ITO["sky_blue"],
 }
 
-#: Second channel: dash patterns, so the lines separate in greyscale.
+# Second channel: dash patterns, so the lines separate in greyscale.
 PREDICTOR_DASHES = {
     "Physics (FAO-56 balance)": (None, None),
     "Sensor only": (4, 2),
@@ -57,7 +57,7 @@ PREDICTOR_DASHES = {
     "XGBoost": (3, 1, 1, 1),
 }
 
-#: Third channel: markers, for scatter and for sparse series.
+# Third channel: markers, for scatter and for sparse series.
 PREDICTOR_MARKERS = {
     "Physics (FAO-56 balance)": "o",
     "Sensor only": "s",
@@ -67,8 +67,8 @@ PREDICTOR_MARKERS = {
     "XGBoost": "P",
 }
 
-#: Sequence-model series, kept clear of the predictor colours so a combined
-#: figure never reuses one hue for two different things.
+# Sequence-model series, kept clear of the predictor colours so a combined
+# figure never reuses one hue for two different things.
 SEQUENCE_COLOURS = {
     "Observed (NASA GWETROOT)": ACTUAL,
     "Persistence": OKABE_ITO["orange"],
@@ -100,6 +100,11 @@ def apply_style(base_font_size: int = 12) -> None:
     design against is a 9-point tick label in a PDF on a laptop.
     """
     import matplotlib as mpl
+    # From the `cycler` package rather than `mpl.cycler`. Matplotlib re-exports
+    # it at runtime but does not declare it in its type stubs, so the shorter
+    # form reads as an unknown attribute to a checker. `cycler` is a hard
+    # matplotlib dependency, so this adds nothing to install.
+    from cycler import cycler
 
     mpl.rcParams.update({
         "figure.figsize": (10, 5),
@@ -136,7 +141,7 @@ def apply_style(base_font_size: int = 12) -> None:
         "lines.markersize": 5,
 
         "legend.frameon": False,
-        "axes.prop_cycle": mpl.cycler(color=[
+        "axes.prop_cycle": cycler(color=[
             OKABE_ITO["blue"], OKABE_ITO["vermillion"], OKABE_ITO["bluish_green"],
             OKABE_ITO["orange"], OKABE_ITO["reddish_purple"], OKABE_ITO["sky_blue"],
         ]),

@@ -12,9 +12,9 @@ from irrigation.models.simulate import simulate_season
 TURF, SAND = CROPS["turfgrass"], SOILS["sand"]
 KW = dict(crop=TURF, soil=SAND, root_depth_m=0.5, kc=0.85)
 
-#: The supervised models, referred to as a set rather than individually.
-#: They sit within ~1% of each other on cost, so any test that names one of
-#: them specifically is asserting noise.
+# The supervised models, referred to as a set rather than individually.
+# They sit within ~1% of each other on cost, so any test that names one of
+# them specifically is asserting noise.
 SUPERVISED_MODELS = {"Random forest", "Gradient boosting", "XGBoost"}
 
 

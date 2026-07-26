@@ -1,4 +1,5 @@
-"""Depletion predictors.
+"""
+Depletion predictors.
 
 Every predictor answers one question: given what is known this morning, how
 depleted is the root zone right now [mm]? The policy layer turns that into a
@@ -13,14 +14,14 @@ that a competent agronomist would have built anyway.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 
 from ..climate.dubai import DailyWeather
-from ..physics.crop import Crop, Soil
 from ..physics import soil_water
+from ..physics.crop import Crop, Soil
 
 
 @dataclass
@@ -56,10 +57,11 @@ class DepletionPredictor(ABC):
 
 # --------------------------------------------------------------------------
 class PhysicsBalance(DepletionPredictor):
-    """FAO-56 water balance, no sensor at all.
+    """
+    FAO-56 water balance, no sensor at all.
 
     The honest baseline. This is what irrigation scheduling has used since
-    1998 and it needs no hardware, no training data and no inference. Any ML
+    1998, and it needs no hardware, no training data and no inference. Any ML
     model has to beat this to justify its existence.
 
     Its weakness is real: errors accumulate. Nothing corrects the running
@@ -89,7 +91,8 @@ class PhysicsBalance(DepletionPredictor):
 
 
 class SensorDirect(DepletionPredictor):
-    """Trust the probe. This is what most "smart irrigation" products do.
+    """
+    Trust the probe. This is what most "smart irrigation" products do.
 
     Converts measured volumetric water content straight to depletion. Exposed
     to every sensor pathology at once - offset, drift, noise, dropout - with
@@ -114,7 +117,8 @@ class SensorDirect(DepletionPredictor):
 
 
 class PhysicsSensorFusion(DepletionPredictor):
-    """Physics balance corrected toward the sensor.
+    """
+    Physics balance corrected toward the sensor.
 
     A fixed-gain complementary filter: physics supplies the trend, the sensor
     supplies a slow correction against accumulated error. The gain is low
@@ -188,7 +192,8 @@ def build_features(obs: Observation, history: dict[str, Any]) -> np.ndarray:
 
 
 class TabularModelPredictor(DepletionPredictor):
-    """Base for supervised models over the engineered feature vector.
+    """
+    Base for supervised models over the engineered feature vector.
 
     Everything that decides *what the model is asked* lives here - the feature
     vector, the lag bookkeeping, the non-negativity clamp on the output. Only
@@ -239,7 +244,8 @@ class TabularModelPredictor(DepletionPredictor):
 
 
 class GradientBoostingPredictor(TabularModelPredictor):
-    """Gradient-boosted trees on engineered features.
+    """
+    Gradient-boosted trees on engineered features.
 
     Given the same information as the other predictors, plus lags. Trained on
     one simulated season, evaluated on a different one with a different seed -
@@ -261,7 +267,8 @@ class GradientBoostingPredictor(TabularModelPredictor):
 
 
 class RandomForestPredictor(TabularModelPredictor):
-    """Bagged trees. Named in the brief, and a useful contrast to boosting.
+    """
+    Bagged trees. Named in the brief, and a useful contrast to boosting.
 
     Boosting fits residuals sequentially and can extrapolate a trend; a forest
     averages independent trees and cannot predict outside the range of its
@@ -286,7 +293,8 @@ class RandomForestPredictor(TabularModelPredictor):
 
 
 class XGBoostPredictor(TabularModelPredictor):
-    """XGBoost, named explicitly in the brief.
+    """
+    XGBoost, named explicitly in the brief.
 
     Hyperparameters are deliberately close to the scikit-learn booster's so
     the comparison isolates the implementation rather than the tuning budget.
