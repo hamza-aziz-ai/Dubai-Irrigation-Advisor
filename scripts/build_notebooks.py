@@ -956,8 +956,22 @@ def build(name: str, cells: list[tuple[str, str]]) -> Path:
         new_markdown_cell(source) if kind == "md" else new_code_cell(source)
         for kind, source in cells
     ])
+
+    # Deterministic cell ids. nbformat 4.5 assigns a random one to every cell
+    # it creates, so rebuilding a notebook whose content had not changed still
+    # rewrote every id and produced a diff. With these fixed by position, a
+    # notebook diff shows only what actually changed in the analysis.
+    for index, cell in enumerate(notebook.cells):
+        cell["id"] = f"cell-{index:02d}"
     notebook.metadata.update({
-        "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+        # "Python 3 (ipykernel)" is what Jupyter and PyCharm both write. Using
+        # the shorter form here meant every editor that opened a notebook
+        # rewrote this line.
+        "kernelspec": {
+            "display_name": "Python 3 (ipykernel)",
+            "language": "python",
+            "name": "python3",
+        },
         "language_info": {"name": "python", "version": sys.version.split()[0]},
     })
 
@@ -972,9 +986,24 @@ def build(name: str, cells: list[tuple[str, str]]) -> Path:
         resources={"metadata": {"path": str(NOTEBOOK_DIR)}},
     ).execute()
 
+    strip_execution_metadata(notebook)
     nbformat.write(notebook, path)
     print(f"  wrote {path}")
     return path
+
+
+def strip_execution_metadata(notebook) -> None:
+    """Drop per-cell execution timings before writing.
+
+    NotebookClient records a wall-clock timestamp for every cell. Those change
+    on every run, so a rebuild that altered nothing still produced a diff in
+    all three notebooks - and any editor that opened one stripped them again,
+    flipping the file back. The timings are of no use to a reader and are not
+    part of the result, so they are removed and the committed notebook depends
+    only on the outputs.
+    """
+    for cell in notebook.cells:
+        cell.get("metadata", {}).pop("execution", None)
 
 
 def main() -> int:
