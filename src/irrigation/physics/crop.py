@@ -1,4 +1,5 @@
-"""Crop coefficients and soil properties (FAO-56 Chapters 6-8).
+"""
+Crop coefficients and soil properties (FAO-56 Chapters 6-8).
 
 Values are taken from FAO-56's published tables rather than tuned. Where a
 Dubai-specific choice departs from the table default, the reason is recorded
@@ -6,7 +7,7 @@ in the dataclass - a number nobody can trace is a number nobody can maintain.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 GrowthStage = Literal["initial", "development", "mid", "late"]
@@ -14,7 +15,8 @@ GrowthStage = Literal["initial", "development", "mid", "late"]
 
 @dataclass(frozen=True)
 class Crop:
-    """Crop water-use characteristics.
+    """
+    Crop water-use characteristics.
 
     kc_* are FAO-56 Table 12 single crop coefficients.
     depletion_fraction (p) is Table 22 - the fraction of available water that
@@ -38,7 +40,8 @@ class Crop:
         }[stage]
 
     def adjusted_depletion_fraction(self, et0_mm_day: float) -> float:
-        """Eq. 83 - p adjusted for evaporative demand.
+        """
+        Eq. 83 - p adjusted for evaporative demand.
 
         Tabulated p assumes ET0 ~ 5 mm/day. Dubai summer runs 8-10 mm/day, at
         which the crop stresses at a *lower* depletion than the table implies:
@@ -83,7 +86,8 @@ CROPS: dict[str, Crop] = {
 
 @dataclass(frozen=True)
 class Soil:
-    """Soil water-holding characteristics.
+    """
+    Soil water-holding characteristics.
 
     field_capacity and wilting_point are volumetric water contents [m3/m3] -
     the same units a capacitance soil-moisture probe reports, so sensor

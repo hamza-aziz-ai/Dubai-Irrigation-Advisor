@@ -1,4 +1,5 @@
-"""FAO-56 reference evapotranspiration (Penman-Monteith).
+"""
+FAO-56 reference evapotranspiration (Penman-Monteith).
 
 Reference: Allen, R.G., Pereira, L.S., Raes, D., Smith, M. (1998).
 "Crop evapotranspiration - Guidelines for computing crop water requirements."
@@ -50,7 +51,8 @@ def slope_vapour_pressure_curve(temp_c: float) -> float:
 
 
 def mean_saturation_vapour_pressure(tmax_c: float, tmin_c: float) -> float:
-    """Eq. 12 - es from daily temperature extremes.
+    """
+    Eq. 12 - es from daily temperature extremes.
 
     Averaging e0(Tmax) and e0(Tmin) rather than taking e0(Tmean): the curve is
     convex, so e0(Tmean) systematically underestimates es. FAO-56 is explicit
@@ -88,7 +90,8 @@ def solar_declination(day_of_year: int) -> float:
 
 
 def sunset_hour_angle(latitude_rad: float, declination_rad: float) -> float:
-    """Eq. 25 - sunset hour angle omega_s [rad].
+    """
+    Eq. 25 - sunset hour angle omega_s [rad].
 
     The argument of arccos is clamped: inside the polar circles it exceeds
     [-1, 1] during polar day/night, which is physically meaningful (the sun
@@ -137,7 +140,8 @@ def solar_radiation_from_temp_range(
     tmax_c: float, tmin_c: float, latitude_deg: float, day_of_year: int,
     k_rs: float = 0.16,
 ) -> float:
-    """Eq. 50 - Hargreaves radiation estimate when Rs is unmeasured.
+    """
+    Eq. 50 - Hargreaves radiation estimate when Rs is unmeasured.
 
     k_rs = 0.16 for interior locations, 0.19 for coastal. Dubai is coastal,
     but the reference example (Lyon) is interior - the default matches FAO's
@@ -173,7 +177,8 @@ def net_longwave_radiation(
 
 
 def soil_heat_flux_monthly(t_month_c: float, t_prev_month_c: float) -> float:
-    """Eq. 43 - G for monthly periods [MJ m-2 day-1].
+    """
+    Eq. 43 - G for monthly periods [MJ m-2 day-1].
 
     Negligible for daily steps (Eq. 42, G = 0) but not for monthly, where the
     soil is warming or cooling across the period.
@@ -193,7 +198,8 @@ def wind_speed_at_2m(wind_speed: float, measurement_height_m: float) -> float:
 # --------------------------------------------------------------------------
 @dataclass(frozen=True)
 class ET0Result:
-    """ET0 with its intermediate quantities retained.
+    """
+    ET0 with its intermediate quantities retained.
 
     The intermediates are kept deliberately: they are what the validation
     tests assert against, and what the explanation layer cites. A bare float
@@ -229,7 +235,8 @@ def eto_penman_monteith(
     day_of_year: int,
     g_mj: float = 0.0,
 ) -> ET0Result:
-    """Eq. 6 - FAO-56 Penman-Monteith reference evapotranspiration [mm/day].
+    """
+    Eq. 6 - FAO-56 Penman-Monteith reference evapotranspiration [mm/day].
 
     Takes Rs directly so the caller decides how it was obtained (measured,
     from sunshine hours, or from temperature range). Mixing that decision into

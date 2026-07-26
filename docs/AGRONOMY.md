@@ -79,6 +79,27 @@ Water is added before evapotranspiration is removed, because irrigation
 applied in the morning is available to the crop the same day. Reversing the
 order biases toward over-irrigation.
 
+### Two loss pathways, and why they are separate
+
+Water can fail to reach the root zone in two unrelated ways, and conflating
+them double-counts the excess on a heavy day:
+
+- **Runoff** is a *rate* limit — rain arriving faster than the surface accepts
+  it. It depends on storm intensity and not at all on how full the profile
+  already is.
+- **Drainage** is a *storage* limit — water that infiltrates but pushes the
+  profile past field capacity and percolates below the root zone.
+
+FAO-56 gives no daily runoff method (Eq. 85 carries `RO` as a term without
+prescribing how to obtain it), so runoff here is a stated modelling choice:
+the surface accepts `infiltration_mm_hr × STORM_DURATION_HR`, with
+`STORM_DURATION_HR = 2.0` in `physics/soil_water.py`. Two hours matches the
+short, intense convective storms that produce most Gulf rainfall. A longer
+assumption would let more water infiltrate and would understate runoff.
+
+This term only matters on the ~4% of Dubai days with measurable rain, but on
+those days the rainfall is intense enough that it is not negligible.
+
 ## Stress coefficient
 
 Eq. 84. `Ks = 1` while depletion stays within RAW, then falls linearly to zero
