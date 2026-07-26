@@ -1,4 +1,5 @@
-"""Ollama-backed explanation engine, with the grounding guarantee enforced.
+"""
+Ollama-backed explanation engine, with the grounding guarantee enforced.
 
 CLAUDE.md invariant 3 says the language model never computes a number. Every
 LLM project claims something like that; almost none of them check it. A prompt
@@ -74,7 +75,8 @@ _UNIT_EXPONENT_PATTERN = re.compile(r"(?<=[A-Za-z])-\d+\b")
 
 
 def normalize(text: str) -> str:
-    """Fold model output to ASCII and collapse whitespace.
+    """
+    Fold model output to ASCII and collapse whitespace.
 
     Beyond closing the verification hole above, this keeps generated prose
     consistent with the rest of the project - and printable. A Windows console
@@ -95,7 +97,8 @@ class GroundingError(Exception):
 
 @dataclass(frozen=True)
 class NumericFact:
-    """One pre-computed quantity the model is permitted to state.
+    """
+    One pre-computed quantity the model is permitted to state.
 
     `label` is what the model is told the number means; it appears verbatim in
     the prompt. `value` is what the verifier matches against.
@@ -113,7 +116,8 @@ class NumericFact:
 # Fact extraction
 # --------------------------------------------------------------------------
 def facts_from_context(context: dict[str, Any]) -> list[NumericFact]:
-    """Every number the model may legitimately use, and no others.
+    """
+    Every number the model may legitimately use, and no others.
 
     Built from the decision object rather than from free text, so there is no
     path by which an un-verified quantity reaches the prompt.
@@ -148,7 +152,8 @@ def _numbers_in(text: str) -> list[float]:
 def _permitted_values(
     facts: list[NumericFact], citations: list[dict[str, str]]
 ) -> set[float]:
-    """Fact values plus any number appearing in the retrieved passages.
+    """
+    Fact values plus any number appearing in the retrieved passages.
 
     Citation text is pasted into the prompt and the model is encouraged to
     reference it, so quoting "70 mm per metre of depth" from FAO-56 Table 19
@@ -164,7 +169,8 @@ def _permitted_values(
 
 
 def _is_grounded(value: float, permitted: set[float]) -> bool:
-    """True if `value` is a permitted quantity, allowing sane rounding.
+    """
+    True if `value` is a permitted quantity, allowing sane rounding.
 
     A model writing 13.8 for 13.84, or 14 for 13.84, is presenting a supplied
     number at a sensible precision - that is desirable, not a violation. A
@@ -228,7 +234,8 @@ def build_prompt(context: dict[str, Any], facts: list[NumericFact]) -> str:
 # Engine
 # --------------------------------------------------------------------------
 class OllamaExplainer:
-    """Explanation engine backed by a local or cloud Ollama model.
+    """
+    Explanation engine backed by a local or cloud Ollama model.
 
     Falls back to `OfflineExplainer` on any of: Ollama not installed, model
     not pulled, request failure, empty output, or a failed grounding check.
@@ -329,7 +336,8 @@ class OllamaExplainer:
 
 
 def build_llm_explainer(model: str = DEFAULT_MODEL) -> OllamaExplainer:
-    """Construct the Ollama engine without checking availability.
+    """
+    Construct the Ollama engine without checking availability.
 
     Availability is deliberately not asserted here: the engine degrades on its
     own, so a caller that builds one and uses it later never has to handle
@@ -339,7 +347,8 @@ def build_llm_explainer(model: str = DEFAULT_MODEL) -> OllamaExplainer:
 
 
 def explainer_from_environment():
-    """Engine selected by `IRRIGATION_EXPLAIN_ENGINE`; offline unless asked.
+    """
+    Engine selected by `IRRIGATION_EXPLAIN_ENGINE`; offline unless asked.
 
     Opt-in rather than auto-detected on purpose. Silently using an LLM because
     one happened to be installed would make the demo non-reproducible on one

@@ -1,4 +1,5 @@
-"""Real observational data sources.
+"""
+Real observational data sources.
 
 Everything in this package reads from files committed to the repository. The
 single function that touches the network (`nasa_power.download`) is a

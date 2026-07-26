@@ -1,4 +1,5 @@
-"""Simulated soil-moisture probe.
+"""
+Simulated soil-moisture probe.
 
 Models the failure modes that actually break field deployments, because a
 pipeline validated only on clean data will meet none of them:
@@ -69,7 +70,8 @@ class SoilMoistureSensor:
 
 
 def interpolate_dropouts(readings: list[SensorReading]) -> list[float]:
-    """Fill gaps by linear interpolation, holding at the edges.
+    """
+    Fill gaps by linear interpolation, holding at the edges.
 
     A gap must be filled, not skipped: irrigation has to be decided every day
     whether the probe reported. Interpolating is honest about the

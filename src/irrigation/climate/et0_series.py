@@ -1,4 +1,5 @@
-"""Turn weather into ET0 - the join between the climate and physics layers.
+"""
+Turn weather into ET0 - the join between the climate and physics layers.
 
 This module owns exactly one judgement: given whatever a data source happened
 to measure, which FAO-56 route to ea and Rs should be used. FAO-56 ranks those
@@ -24,7 +25,8 @@ from .dubai import DUBAI_ALTITUDE_M, DUBAI_LATITUDE, DailyWeather
 
 
 def actual_vapour_pressure_for(weather: DailyWeather) -> float:
-    """Best available ea for a day [kPa], following the FAO-56 hierarchy.
+    """
+    Best available ea for a day [kPa], following the FAO-56 hierarchy.
 
     Dewpoint (Eq. 14) is preferred because it is a direct measurement of the
     quantity ea *is*. The RHmax/RHmin route (Eq. 17) reconstructs it from two
@@ -41,7 +43,8 @@ def actual_vapour_pressure_for(weather: DailyWeather) -> float:
 def solar_radiation_for(
     weather: DailyWeather, latitude_deg: float = DUBAI_LATITUDE
 ) -> float:
-    """Best available Rs for a day [MJ m-2 day-1].
+    """
+    Best available Rs for a day [MJ m-2 day-1].
 
     A measured value is used as-is. Otherwise, the Angstrom formula (Eq. 35)
     converts sunshine duration, which carries the uncertainty of the a_s/b_s
@@ -59,7 +62,8 @@ def et0_for_day(
     latitude_deg: float = DUBAI_LATITUDE,
     altitude_m: float = DUBAI_ALTITUDE_M,
 ) -> ET0Result:
-    """FAO-56 reference evapotranspiration for one day of weather.
+    """
+    FAO-56 reference evapotranspiration for one day of weather.
 
     Args:
         weather: The day's observations. Optional measured fields are used

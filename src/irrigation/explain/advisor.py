@@ -1,4 +1,5 @@
-"""Grounded explanation of an irrigation decision.
+"""
+Grounded explanation of an irrigation decision.
 
 Same discipline as the physics layer: the language model never computes.
 Every number in an explanation is passed in already calculated, and the
@@ -84,7 +85,8 @@ class Explanation:
 
 
 class ExplanationEngine(Protocol):
-    """What an explanation engine must provide.
+    """
+    What an explanation engine must provide.
 
     `name` is declared read-only rather than as a plain attribute. A mutable
     attribute in a Protocol requires implementations to expose a settable one,

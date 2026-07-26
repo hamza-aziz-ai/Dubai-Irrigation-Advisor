@@ -1,4 +1,5 @@
-"""Dubai climate baseline and a stochastic weather generator.
+"""
+Dubai climate baseline and a stochastic weather generator.
 
 WHY SYNTHETIC DATA IS THE RIGHT ANSWER HERE, NOT A COMPROMISE
 
@@ -23,6 +24,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ..physics.penman_monteith import wind_speed_at_2m
@@ -56,7 +58,8 @@ MONTH_STARTS = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 
 @dataclass(frozen=True)
 class DailyWeather:
-    """One day of weather. The interface a real data source must satisfy.
+    """
+    One day of weather. The interface a real data source must satisfy.
 
     The first eight fields are the minimum a station must provide. The
     trailing optional fields carry *measured* quantities that would otherwise
@@ -116,12 +119,18 @@ def month_of_year(day_of_year: int) -> int:
     return 0
 
 
-def _interpolate_monthly(values: list[float], day_of_year: int) -> float:
-    """Smooth monthly normals across the year.
+def _interpolate_monthly(values: Sequence[float], day_of_year: int) -> float:
+    """
+    Smooth monthly normals across the year.
 
     Stepping between monthly values would create artificial discontinuities on
     the first of each month, which a sequence model would happily learn as
     signal. Interpolating on a circular year avoids inventing that structure.
+
+    Takes a Sequence rather than a list because `list` is invariant: the
+    humidity normals above are whole numbers and therefore `list[int]`, which
+    is not a `list[float]` however convertible the elements are. Sequence is
+    covariant, and this function only ever reads.
     """
     pos = (day_of_year - 15.0) / 365.0 * 12.0
     lo = math.floor(pos) % 12
@@ -131,7 +140,8 @@ def _interpolate_monthly(values: list[float], day_of_year: int) -> float:
 
 
 class DubaiWeatherGenerator:
-    """Stochastic daily weather consistent with Dubai's climate normals.
+    """
+    Stochastic daily weather consistent with Dubai's climate normals.
 
     Deliberately simple and fully seeded: reproducibility matters more than
     meteorological sophistication, because the point of this data is to
@@ -181,7 +191,8 @@ class DubaiWeatherGenerator:
 
 
 def normals_day(day_of_year: int) -> DailyWeather:
-    """Deterministic climatological day - no stochastic component.
+    """
+    Deterministic climatological day - no stochastic component.
 
     Used for the ET0 climatology and for any test that must not depend on a
     random seed.

@@ -1,12 +1,13 @@
-"""NASA POWER daily data for Dubai - the project's real-observation source.
+"""
+NASA POWER daily data for Dubai - the project's real-observation source.
 
 WHY THIS SOURCE
 
 The brief asks for historical weather feeding a soil-moisture model. The UAE's
 National Center of Meteorology does not publish a free bulk historical
-download, and commercial weather APIs are both paid and unreproducible - the
-same request next year returns different numbers after a reanalysis update,
-with no way to pin a version.
+download. Commercial weather APIs are both paid and unreproducible: the same
+request next year returns different numbers after a reanalysis update, with no
+way to pin a version.
 
 NASA POWER solves all three problems at once. It is US-government, public
 domain, needs no account or key, covers 1981-present at daily resolution, and
@@ -71,7 +72,8 @@ from ..physics.penman_monteith import saturation_vapour_pressure
 # --------------------------------------------------------------------------
 POWER_ENDPOINT = "https://power.larc.nasa.gov/api/temporal/daily/point"
 
-#: POWER parameter name -> (column name used here, unit, what it is).
+#: Maps each POWER parameter name to the column name used here, its unit, and
+#: a description.
 #:
 #: Units are recorded because POWER's own defaults differ by community: the
 #: AG community returns irradiance in MJ m-2 day-1, the RE community returns
@@ -94,7 +96,7 @@ POWER_PARAMETERS: dict[str, tuple[str, str, str]] = {
 }
 
 #: POWER substitutes this for missing values. It is a plausible-looking float,
-#: not a NaN, so it must be filtered explicitly or it silently poisons means.
+#: not a NaN, so it must be filtered explicitly, or it silently poisons means.
 POWER_FILL_VALUE = -999.0
 
 #: Complete calendar years keep the chronological train/val/test split clean
@@ -116,7 +118,8 @@ def build_request_url(
     latitude_deg: float = DUBAI_LATITUDE,
     longitude_deg: float = DUBAI_LONGITUDE,
 ) -> str:
-    """Compose the POWER request URL.
+    """
+    Compose the POWER request URL.
 
     Split out from `download` so the exact request can be printed, pasted into
     a browser, and checked by a reviewer without running any code.
@@ -138,7 +141,8 @@ def download(
     longitude_deg: float = DUBAI_LONGITUDE,
     timeout_s: float = 180.0,
 ) -> Path:
-    """Fetch the POWER record and cache it. Requires network; nothing else does.
+    """
+    Fetch the POWER record and cache it. Requires network; nothing else does.
 
     Run by hand to create or refresh `data/raw/`. The resulting CSV is
     committed, which is what keeps the library, tests, demo and dashboard
@@ -158,8 +162,11 @@ def download(
     with urllib.request.urlopen(url, timeout=timeout_s) as response:
         payload = json.load(response)
 
-    parameters = payload["properties"]["parameter"]
-    dates = sorted(next(iter(parameters.values())))
+    # The payload comes back from `json.load` as Any, so the shape is declared
+    # here rather than inferred. Without it the date keys carry no type, and
+    # `strptime` below is being handed something only assumed to be a string.
+    parameters: dict[str, dict[str, float]] = payload["properties"]["parameter"]
+    dates: list[str] = sorted(next(iter(parameters.values())))
     columns = [POWER_PARAMETERS[name][0] for name in POWER_PARAMETERS]
 
     csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -203,7 +210,8 @@ def download(
 # --------------------------------------------------------------------------
 @dataclass(frozen=True)
 class PowerRecord:
-    """One day of NASA POWER output, units as documented in POWER_PARAMETERS.
+    """
+    One day of NASA POWER output, units as documented in POWER_PARAMETERS.
 
     Kept distinct from `DailyWeather` because it holds things DailyWeather has
     no business knowing about - three soil wetness depths, wind at two heights
@@ -231,7 +239,8 @@ class PowerRecord:
 
 
 def _is_missing(value: float) -> bool:
-    """POWER's sentinel, matched with tolerance rather than equality.
+    """
+    POWER's sentinel, matched with tolerance rather than equality.
 
     Round-tripping through CSV can perturb the last digit, and `-999.0 == x`
     would then quietly pass a fill value through as real data.
@@ -240,7 +249,8 @@ def _is_missing(value: float) -> bool:
 
 
 def load_records(csv_path: Path = DEFAULT_CSV) -> list[PowerRecord]:
-    """Read the cached CSV, dropping any day with a missing value.
+    """
+    Read the cached CSV, dropping any day with a missing value.
 
     Days are dropped whole rather than imputed. A day missing radiation cannot
     have a trustworthy ET0, and interpolating it would put a fabricated number
@@ -285,7 +295,8 @@ def load_metadata(metadata_path: Path = DEFAULT_METADATA) -> dict:
 def relative_humidity_extremes(
     tmax_c: float, tmin_c: float, dewpoint_c: float
 ) -> tuple[float, float]:
-    """RHmax and RHmin [%] from dewpoint and the temperature extremes.
+    """
+    RHmax and RHmin [%] from dewpoint and the temperature extremes.
 
     POWER reports mean relative humidity, but `DailyWeather` is defined in
     terms of the daily extremes that FAO-56 Eq. 17 uses. Rather than invent
@@ -311,7 +322,8 @@ def relative_humidity_extremes(
 
 
 def to_daily_weather(record: PowerRecord) -> DailyWeather:
-    """Project a POWER record onto the `DailyWeather` contract.
+    """
+    Project a POWER record onto the `DailyWeather` contract.
 
     Measured radiation and dewpoint are carried through as the optional fields
     they are, so `et0_for_day` takes the FAO-56 preferred routes and never

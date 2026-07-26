@@ -1,4 +1,5 @@
-"""Irrigation decisions under asymmetric cost.
+"""
+Irrigation decisions under asymmetric cost.
 
 THE CENTRAL ARGUMENT OF THIS PROJECT
 
@@ -28,7 +29,8 @@ Action = Literal["irrigate", "hold"]
 
 @dataclass(frozen=True)
 class CostModel:
-    """Costs in AED per hectare-day.
+    """
+    Costs in AED per hectare-day.
 
     water_cost_per_mm reflects desalinated supply, which is the relevant
     marginal source for UAE landscape and protected agriculture.
@@ -89,7 +91,8 @@ def decide(
     irrigation_efficiency: float = 0.90,
     max_application_mm: float | None = None,
 ) -> IrrigationDecision:
-    """Decide today's irrigation from predicted depletion.
+    """
+    Decide today's irrigation from predicted depletion.
 
     The trigger is a fraction of RAW rather than of TAW, and it fires *before*
     RAW is reached. Waiting until depletion actually reaches RAW means the
