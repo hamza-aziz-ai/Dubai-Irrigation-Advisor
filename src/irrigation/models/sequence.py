@@ -4,9 +4,14 @@ Sequence models over real Dubai soil moisture.
 WHAT THIS IS FOR, AND WHAT IT IS NOT FOR
 
 The rest of `models/` compares depletion predictors inside a simulator. That
-comparison is honest about costs but it has one unavoidable weakness: the true
-state comes from this project's own water balance, so a model fitted to it is
-partly fitted to my assumptions.
+comparison is honest about costs, but it has one unavoidable weakness: the
+true state comes from this project's own water balance, so a model fitted to
+it is partly fitted to my assumptions.
+
+Unlike the rest of the package, this module imports torch at module level. It
+is the only module that cannot work without it, and a locally defined
+`nn.Module` cannot be serialized by `torch.save`, so the class lives at module
+scope where it can be saved, subclassed and inspected.
 
 This module removes that weakness for one specific question. The target here
 is NASA POWER's `GWETROOT` - root-zone soil wetness produced by MERRA-2's land
@@ -43,6 +48,8 @@ from dataclasses import dataclass, field
 from typing import Literal, Sequence
 
 import numpy as np
+import torch
+import torch.nn as nn
 
 from ..climate.et0_series import et0_for_day
 from ..data.nasa_power import PowerRecord, to_daily_weather
@@ -202,8 +209,9 @@ def build_dataset(records: Sequence[PowerRecord], config: SequenceConfig) -> Dat
 
     The standardizer is the subtle leak. Fitting mean and standard deviation
     over the whole series lets the test years influence the scaling of the
-    training years - a small effect, invisible in any loss curve, and enough
-    to make a reported test score unreproducible on genuinely unseen data.
+    training years. The effect is small and invisible in any loss curve, and
+    it is still enough to make a reported test score unreproducible on
+    genuinely unseen data.
     """
     features, targets, dates, columns = build_frame(records)
 
@@ -251,49 +259,47 @@ def build_dataset(records: Sequence[PowerRecord], config: SequenceConfig) -> Dat
 # --------------------------------------------------------------------------
 # Model
 # --------------------------------------------------------------------------
-def build_network(config: SequenceConfig, n_features: int):
+class SoilMoistureRNN(nn.Module):
     """
-    LSTM or GRU followed by a linear head, as a torch Module.
+    Recurrent encoder over the lookback window, last state -> scalar.
 
-    Imported lazily so that the rest of the package - physics, policy,
-    dashboard - stays importable without torch installed.
+    Only the final hidden state is used. Soil moisture responds to accumulated
+    conditions over weeks, so the summary of the window is the quantity of
+    interest; per-timestep outputs would be predicting days that are already
+    in the inputs.
+
+    Defined at module scope, not inside a factory. A class created inside a
+    function cannot be pickled, so `torch.save(model)` on it fails and the
+    trained weights cannot leave the process that made them.
     """
-    import torch.nn as nn
 
-    class SoilMoistureRNN(nn.Module):
-        """
-        Recurrent encoder over the lookback window, last state -> scalar.
+    def __init__(self, config: SequenceConfig, n_features: int) -> None:
+        super().__init__()
+        cell = nn.LSTM if config.cell == "lstm" else nn.GRU
+        self.rnn = cell(
+            input_size=n_features,
+            hidden_size=config.hidden_size,
+            num_layers=config.num_layers,
+            dropout=config.dropout if config.num_layers > 1 else 0.0,
+            batch_first=True,
+        )
+        self.head = nn.Linear(config.hidden_size, 1)
 
-        Only the final hidden state is used. Soil moisture responds to
-        accumulated conditions over weeks, so the summary of the window is the
-        quantity of interest; per-timestep outputs would be predicting days
-        that are already in the inputs.
-        """
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        output, _ = self.rnn(x)
+        return self.head(output[:, -1, :]).squeeze(-1)
 
-        def __init__(self) -> None:
-            super().__init__()
-            cell = nn.LSTM if config.cell == "lstm" else nn.GRU
-            self.rnn = cell(
-                input_size=n_features,
-                hidden_size=config.hidden_size,
-                num_layers=config.num_layers,
-                dropout=config.dropout if config.num_layers > 1 else 0.0,
-                batch_first=True,
-            )
-            self.head = nn.Linear(config.hidden_size, 1)
 
-        def forward(self, x):
-            output, _ = self.rnn(x)
-            return self.head(output[:, -1, :]).squeeze(-1)
-
-    return SoilMoistureRNN()
+def build_network(config: SequenceConfig, n_features: int) -> SoilMoistureRNN:
+    """LSTM or GRU followed by a linear head, sized for this feature set."""
+    return SoilMoistureRNN(config, n_features)
 
 
 @dataclass
 class TrainingResult:
     """A fitted model plus everything needed to report on it honestly."""
 
-    model: object
+    model: SoilMoistureRNN
     config: SequenceConfig
     train_losses: list[float]
     val_losses: list[float]
@@ -316,7 +322,6 @@ def train_sequence_model(dataset: Dataset, config: SequenceConfig) -> TrainingRe
     generalized best rather than the one that trained longest. The test years
     are touched exactly once, after that choice is already made.
     """
-    import torch
     from torch.utils.data import DataLoader, TensorDataset
 
     torch.manual_seed(config.seed)
@@ -402,7 +407,7 @@ def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, floa
     }
 
 
-def persistence_baseline(dataset: Dataset, config: SequenceConfig) -> np.ndarray:
+def persistence_baseline(dataset: Dataset) -> np.ndarray:
     """
     Tomorrow equals today. The bar the FORECAST task must clear.
 

@@ -193,22 +193,22 @@ def test_no_nan_or_inf_reaches_the_model(forecast_dataset, estimate_dataset):
 # --------------------------------------------------------------------------
 # Baselines
 # --------------------------------------------------------------------------
-def test_persistence_recovers_the_previous_days_wetness(forecast_dataset, forecast_config):
+def test_persistence_recovers_the_previous_days_wetness(forecast_dataset):
     """De-standardization must invert exactly, or the baseline is handicapped.
 
     A baseline that is accidentally weakened is worse than no baseline: it
     makes the model look good and gives no warning.
     """
-    predictions = S.persistence_baseline(forecast_dataset, forecast_config)
+    predictions = S.persistence_baseline(forecast_dataset)
     assert predictions.min() > 0.0
     assert predictions.max() < 1.0
     metrics = S.regression_metrics(forecast_dataset.y_test, predictions)
     assert metrics["r2"] > 0.9
 
 
-def test_persistence_is_unavailable_without_soil_history(estimate_dataset, estimate_config):
+def test_persistence_is_unavailable_without_soil_history(estimate_dataset):
     with pytest.raises(ValueError):
-        S.persistence_baseline(estimate_dataset, estimate_config)
+        S.persistence_baseline(estimate_dataset)
 
 
 def test_climatology_uses_only_training_years(records, forecast_dataset, forecast_config):

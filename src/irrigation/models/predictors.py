@@ -51,7 +51,7 @@ class DepletionPredictor(ABC):
     def reset(self) -> None:
         """Clear any per-season internal state."""
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+    def fit(self, features: np.ndarray, targets: np.ndarray) -> None:
         raise NotImplementedError
 
 
@@ -219,8 +219,8 @@ class TabularModelPredictor(DepletionPredictor):
     def reset(self) -> None:
         self._history = {}
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
-        self._model.fit(X, y)
+    def fit(self, features: np.ndarray, targets: np.ndarray) -> None:
+        self._model.fit(features, targets)
         self._fitted = True
 
     def predict(self, obs: Observation) -> float:

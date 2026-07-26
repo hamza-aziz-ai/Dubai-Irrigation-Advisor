@@ -442,8 +442,7 @@ for (task, cell), config in configs.items():
           f"R2 {metrics['r2']:.4f}  (best epoch {results[(task, cell)].best_epoch})")
 
 baselines = {
-    ("forecast", "Persistence"): S.persistence_baseline(datasets["forecast"],
-                                                        configs[("forecast", "lstm")]),
+    ("forecast", "Persistence"): S.persistence_baseline(datasets["forecast"]),
     ("forecast", "Climatology"): S.climatology_baseline(records, datasets["forecast"],
                                                         configs[("forecast", "lstm")]),
     ("estimate", "Climatology"): S.climatology_baseline(records, datasets["estimate"],

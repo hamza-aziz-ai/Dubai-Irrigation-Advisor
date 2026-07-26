@@ -93,22 +93,20 @@ def run_comparison(
     kc = kc if kc is not None else crop.kc_mid
     predictors = predictors or default_predictors(crop, soil)
 
-    # One optional tuple rather than two arrays plus a `trained` flag. The
-    # flag and the arrays could drift apart in principle, and nothing except
-    # reading the loop told you they could not - the None check now carries
-    # that guarantee where it is used.
-    training_set: tuple[np.ndarray, np.ndarray] | None = None
+    # Fitting is hoisted out of the simulation loop so the training set is a
+    # plain pair of arrays rather than something optional that every later
+    # line has to re-establish is present. It is built at most once and shared
+    # by all of them, which is what makes a cost difference between the
+    # supervised models attributable to the algorithm and not to the sample.
+    trainable = [p for p in predictors if p.requires_training]
+    if trainable:
+        features, targets = build_training_set(crop, soil, root_depth_m, kc, days)
+        for predictor in trainable:
+            predictor.fit(features, targets)
+
     results: list[SeasonResult] = []
 
     for predictor in predictors:
-        if predictor.requires_training:
-            # Built once and shared, so every supervised model is fitted on
-            # identical data and a cost difference between them is the
-            # algorithm rather than the sample.
-            if training_set is None:
-                training_set = build_training_set(crop, soil, root_depth_m, kc, days)
-            predictor.fit(*training_set)
-
         result, _, _ = simulate_season(
             predictor, crop, soil,
             root_depth_m=root_depth_m, kc=kc, days=days,
