@@ -1,4 +1,5 @@
-"""Streamlit dashboard for the Dubai irrigation advisor.
+"""
+Streamlit dashboard for the Dubai irrigation advisor.
 
     pipenv run streamlit run app/dashboard.py
 
@@ -23,8 +24,10 @@ laptop screen shared in a meeting room. So:
 """
 from __future__ import annotations
 
+import datetime as dt
 import sys
 from pathlib import Path
+from typing import Any, TypedDict
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -35,7 +38,7 @@ import streamlit as st
 from irrigation.climate.et0_series import et0_for_day
 from irrigation.data.nasa_power import load_metadata, load_records, load_weather
 from irrigation.decision.policy import CostModel, decide
-from irrigation.explain.advisor import explain_decision
+from irrigation.explain.advisor import ExplanationEngine, explain_decision
 from irrigation.explain.llm import build_llm_explainer
 from irrigation.models.evaluate import run_comparison
 from irrigation.physics.crop import CROPS, SOILS
@@ -56,14 +59,40 @@ MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 # --------------------------------------------------------------------------
 # Cached data access
 # --------------------------------------------------------------------------
+class ClimateSummary(TypedDict):
+    """
+    Return shape of `climate_summary`.
+
+    Declared rather than left as a bare `dict` so the f-strings that format
+    these values are checkable. Untyped, every lookup is `Any`, `max()` over
+    one returns a comparison protocol with no `__format__`, and a genuine
+    formatting mistake would look exactly like the noise.
+    """
+
+    et0_by_month: list[float]
+    tmax_by_month: list[float]
+    rain_by_month: list[float]
+    annual_rainfall_mm: float
+    wetness_by_month: list[float]
+    annual_totals: list[float]
+    first_date: dt.date
+    last_date: dt.date
+    n_days: int
+    metadata: dict[str, Any]
+
+
 @st.cache_data(show_spinner=False)
-def climate_summary() -> dict:
+def climate_summary() -> ClimateSummary:
     """Monthly means from the committed 30-year NASA POWER record."""
     records = load_records()
     weather = load_weather()
     et0 = np.array([et0_for_day(day).et0_mm_day for day in weather])
-    months = np.array([day.date.month for day in weather])
-    years = np.array([day.date.year for day in weather])
+    # Dates come from the records, not from `weather`. `DailyWeather.date` is
+    # optional - a generated day has no calendar date - whereas `PowerRecord`
+    # always carries one. The two lists are built one-to-one from the same
+    # source, so the indices still line up with `et0`.
+    months = np.array([record.date.month for record in records])
+    years = np.array([record.date.year for record in records])
 
     return {
         "et0_by_month": [float(et0[months == m].mean()) for m in range(1, 13)],
@@ -95,15 +124,23 @@ def climate_summary() -> dict:
 
 @st.cache_data(show_spinner="Simulating a 120-day season for each method...")
 def season_comparison(
-    crop_key: str, soil_key: str, root_depth_m: float, kc: float,
-    water_cost: float, stress_cost: float, days: int,
-) -> list[dict]:
+    crop_name: str, soil_name: str, root_depth: float, crop_coefficient: float,
+    water_rate: float, stress_rate: float, days: int,
+) -> list[dict[str, Any]]:
+    """
+    Run the six-way comparison. Arguments double as the cache key.
+
+    Parameter names are deliberately distinct from the sidebar variables they
+    are called with. Reusing those names would shadow them inside the function,
+    where a later edit reading `crop_key` would silently get the parameter -
+    which happens to work here and would not after a refactor.
+    """
     results = run_comparison(
-        CROPS[crop_key], SOILS[soil_key],
-        root_depth_m=root_depth_m, kc=kc, days=days,
+        CROPS[crop_name], SOILS[soil_name],
+        root_depth_m=root_depth, kc=crop_coefficient, days=days,
         cost_model=CostModel(
-            water_cost_per_mm=water_cost,
-            stress_cost_per_mm_deficit=stress_cost,
+            water_cost_per_mm=water_rate,
+            stress_cost_per_mm_deficit=stress_rate,
         ),
     )
     return [result.summary() for result in results]
@@ -242,7 +279,9 @@ with decision_tab:
         )
 
         st.subheader("Why")
-        engine = build_llm_explainer() if use_llm else None
+        engine: ExplanationEngine | None = (
+            build_llm_explainer() if use_llm else None
+        )
         with st.spinner("Writing the explanation..."):
             explanation = explain_decision(
                 decision, et0_forecast_mm=et0_forecast,
@@ -279,12 +318,17 @@ with comparison_tab:
     summaries = season_comparison(
         crop_key, soil_key, root_depth_m, kc, water_cost, stress_cost, 120
     )
-    names = [s["predictor"] for s in summaries]
-    costs = np.array([s["total_cost_aed"] for s in summaries])
-    rmse = np.array([s["depletion_rmse_mm"] for s in summaries])
+    # Plain lists, not numpy arrays. These values are only ever indexed,
+    # ranked and formatted into strings - none of which needs an array - and
+    # numpy scalars leaking into f-strings is what makes `{value:,.0f}`
+    # unverifiable to a type checker.
+    names: list[str] = [str(s["predictor"]) for s in summaries]
+    costs: list[float] = [float(s["total_cost_aed"]) for s in summaries]
+    rmse: list[float] = [float(s["depletion_rmse_mm"]) for s in summaries]
 
-    cheapest = int(np.argmin(costs))
-    most_accurate = int(np.argmin(rmse))
+    cheapest = min(range(len(costs)), key=lambda i: costs[i])
+    most_accurate = min(range(len(rmse)), key=lambda i: rmse[i])
+    dearest = max(range(len(costs)), key=lambda i: costs[i])
 
     top = st.columns(3)
     top[0].metric("Cheapest to run", names[cheapest], f"{costs[cheapest]:,.0f} AED")
@@ -309,10 +353,10 @@ with comparison_tab:
 
     with chart_left:
         fig, ax = plt.subplots(figsize=(6, 4.2))
-        order = np.argsort(costs)
-        ax.barh(np.arange(len(names)), costs[order],
+        order = sorted(range(len(costs)), key=lambda i: costs[i])
+        ax.barh(range(len(names)), [costs[i] for i in order],
                 color=[colour_for(names[i]) for i in order])
-        ax.set_yticks(np.arange(len(names)), [names[i] for i in order], fontsize=9)
+        ax.set_yticks(range(len(names)), [names[i] for i in order], fontsize=9)
         ax.set_xlabel("Season operating cost (AED)")
         ax.set_xscale("log")
         ax.set_title("Cost to run")
@@ -321,8 +365,8 @@ with comparison_tab:
         plt.close(fig)
         caption(
             f"Cheapest is {names[cheapest]} at {costs[cheapest]:,.0f} AED; "
-            f"most expensive is {names[int(np.argmax(costs))]} at "
-            f"{costs.max():,.0f} AED. Note the logarithmic scale."
+            f"most expensive is {names[dearest]} at "
+            f"{costs[dearest]:,.0f} AED. Note the logarithmic scale."
         )
 
     with chart_right:
@@ -375,11 +419,12 @@ with climate_tab:
     st.header("Dubai climate, 30 years of NASA observations")
 
     summary = climate_summary()
-    annual = np.array(summary["annual_totals"])
+    annual = summary["annual_totals"]
+    mean_annual = sum(annual) / len(annual)
 
     top = st.columns(4)
     top[0].metric("Days of record", f"{summary['n_days']:,}")
-    top[1].metric("Mean annual water demand", f"{annual.mean():,.0f} mm")
+    top[1].metric("Mean annual water demand", f"{mean_annual:,.0f} mm")
     top[2].metric("Peak month demand", f"{max(summary['et0_by_month']):.1f} mm/day")
     top[3].metric("Annual rainfall", f"{summary['annual_rainfall_mm']:.0f} mm")
 
@@ -402,9 +447,11 @@ with climate_tab:
     st.pyplot(fig, use_container_width=True)
     plt.close(fig)
 
+    et0_by_month = summary["et0_by_month"]
+    peak_month = max(range(12), key=lambda m: et0_by_month[m])
     caption(
-        f"Peak demand is {max(summary['et0_by_month']):.1f} mm/day in "
-        f"{MONTHS[int(np.argmax(summary['et0_by_month']))]}, against total "
+        f"Peak demand is {et0_by_month[peak_month]:.1f} mm/day in "
+        f"{MONTHS[peak_month]}, against total "
         f"annual rainfall of about {summary['annual_rainfall_mm']:.0f} mm. "
         f"Even the wettest month averages only "
         f"{max(summary['rain_by_month']):.1f} mm/day of rain, so rainfall "

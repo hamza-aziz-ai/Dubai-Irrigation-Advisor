@@ -84,7 +84,17 @@ class Explanation:
 
 
 class ExplanationEngine(Protocol):
-    name: str
+    """What an explanation engine must provide.
+
+    `name` is declared read-only rather than as a plain attribute. A mutable
+    attribute in a Protocol requires implementations to expose a settable one,
+    and `OllamaExplainer.name` is a computed property - it derives the model
+    tag - so it could not satisfy the stricter form. A read-only declaration is
+    also the honest one: nothing assigns to this.
+    """
+
+    @property
+    def name(self) -> str: ...
 
     def explain(self, context: dict[str, Any]) -> Explanation: ...
 

@@ -16,12 +16,12 @@ xgboost = "*"
 matplotlib = "*"
 seaborn = "*"
 jupyter = "*"
-streamlit = "*"
 ollama = "*"
 python-dotenv = "*"
 langchain = "*"
 torch = {version = "*", index = "downloadpytorch"}
 torchvision = {version = "*", index = "downloadpytorch"}
+streamlit = "*"
 
 [dev-packages]
 pytest = "*"
