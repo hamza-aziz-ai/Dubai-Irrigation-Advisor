@@ -506,9 +506,14 @@ rows = [
 # Named distinctly from the `scores` dict above. Notebook cells share one
 # namespace, so reusing `metrics` for both a dict and a list of dicts makes
 # the name mean two things at once - to a reader as much as to a checker.
-names: list[str] = [r[0] for r in rows]
+#
+# Unpacked by name rather than indexed by position. `rows` holds mixed types,
+# so r[0] and r[2] read as "whichever of str or ndarray" instead of the one
+# each actually is - and the numbers say nothing about what they hold.
+names: list[str] = [label for label, _, _ in rows]
 row_metrics: list[dict[str, float]] = [
-    S.regression_metrics(datasets[r[1]].y_test, r[2]) for r in rows
+    S.regression_metrics(datasets[task].y_test, predictions)
+    for _, task, predictions in rows
 ]
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 4.4))
@@ -854,17 +859,25 @@ ax.set_ylabel("Total operating cost (AED)")
 ax.set_title("Where the ranking flips")
 ax.legend(ncol=2, fontsize=9.5)
 
-crossover = None
+# Two plain locals rather than an optional tuple. Subscripting a value that
+# may be None makes every later line re-establish that it is not, and the
+# positions of a bare tuple carry no meaning to a reader either.
+crossover_penalty: float | None = None
+crossover_winner = ""
 for index, penalty in enumerate(penalties):
     winner = min(curves, key=lambda n: curves[n][index])
     if not winner.startswith("Physics ("):
-        crossover = (penalty, winner)
+        crossover_penalty, crossover_winner = penalty, winner
         break
 
-if crossover:
-    ax.axvline(crossover[0], color="#4D4D4D", linestyle=":", linewidth=1.5)
-    ax.annotate(f"machine learning\\ntakes over\\n({crossover[1]})",
-                (crossover[0], ax.get_ylim()[0] * 3), fontsize=10, ha="center")
+if crossover_penalty is not None:
+    ax.axvline(crossover_penalty, color="#4D4D4D", linestyle=":", linewidth=1.5)
+    # Right-aligned and nudged left. The crossover is the last point on the
+    # axis, so a centred label puts half its width outside the plot.
+    ax.annotate(f"machine learning\\ntakes over\\n({crossover_winner})",
+                (crossover_penalty, ax.get_ylim()[0] * 3),
+                xytext=(-8, 0), textcoords="offset points",
+                fontsize=10, ha="right")
 
 plt.tight_layout()
 plt.show()

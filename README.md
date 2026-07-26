@@ -27,14 +27,14 @@ hardware.
 Six ways to decide when to irrigate, run over the same simulated 120-day Dubai
 summer, scored on operating cost rather than prediction error:
 
-| Predictor | Cost (AED) | Water (mm) | Stress days | Drainage (mm) | RMSE (mm) | Bias (mm) |
-|---|------------|------------|-------------|---:|---:|---:|
-| **Physics (FAO-56 balance)** | **2,645**  | 926        | 5           | 9 | 2.49 | −1.47 |
-| Sensor only | 20,062     | 865        | 99          | 1 | 12.28 | −10.27 |
-| Physics + sensor fusion | 16,533     | 900        | 97          | 4 | 9.96 | −9.25 |
-| Random forest | 3,055      | 1,150      | 0           | 209 | 1.89 | +1.68 |
-| Gradient boosting | 3,064      | 1,154      | 0           | 212 | 1.93 | +1.70 |
-| XGBoost | 3,036      | 1,143      | 0           | 202 | **1.88** | +1.65 |
+| Predictor                    | Cost (AED) | Water (mm) | Stress days | Drainage (mm) | RMSE (mm) | Bias (mm) |
+|------------------------------|------------|------------|-------------|---------------|-----------|-----------|
+| **Physics (FAO-56 balance)** | **2,645**  | 926        | 5           | 9             | 2.49      | −1.47     |
+| Sensor only                  | 20,062     | 865        | 99          | 1             | 12.28     | −10.27    |
+| Physics + sensor fusion      | 16,533     | 900        | 97          | 4             | 9.96      | −9.25     |
+| Random forest                | 3,055      | 1,150      | 0           | 209           | 1.89      | +1.68     |
+| Gradient boosting            | 3,064      | 1,154      | 0           | 212           | 1.93      | +1.70     |
+| XGBoost                      | 3,036      | 1,143      | 0           | 202           | **1.88**  | +1.65     |
 
 **The most accurate model is not the cheapest to run.** XGBoost predicts
 root-zone depletion more accurately than the physics baseline and still costs
@@ -53,14 +53,14 @@ RMSE weights over- and under-estimation equally. A field does not.
 
 ### Where the ranking flips
 
-| Stress penalty (AED/mm) | Ratio | Physics | Sensor | Fusion | RF | GBM | XGB | Winner |
-|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| 2.5 | 1× | **2,499** | 3,773 | 3,593 | 3,055 | 3,064 | 3,036 | Physics |
-| 5.0 | 2× | **2,512** | 5,254 | 4,770 | 3,055 | 3,064 | 3,036 | Physics |
-| 15.0 | 6× | **2,565** | 11,177 | 9,475 | 3,055 | 3,064 | 3,036 | Physics |
-| 30.0 | 12× | **2,645** | 20,062 | 16,533 | 3,055 | 3,064 | 3,036 | Physics |
-| 60.0 | 24× | **2,804** | 37,832 | 30,649 | 3,055 | 3,064 | 3,036 | Physics |
-| 120.0 | 48× | 3,123 | 73,372 | 58,881 | 3,055 | 3,064 | **3,036** | XGBoost |
+| Stress penalty (AED/mm) | Ratio | Physics   | Sensor | Fusion | RF    | GBM   | XGB       | Winner  |
+|-------------------------|-------|-----------|--------|--------|-------|-------|-----------|---------|
+| 2.5                     | 1×    | **2,499** | 3,773  | 3,593  | 3,055 | 3,064 | 3,036     | Physics |
+| 5.0                     | 2×    | **2,512** | 5,254  | 4,770  | 3,055 | 3,064 | 3,036     | Physics |
+| 15.0                    | 6×    | **2,565** | 11,177 | 9,475  | 3,055 | 3,064 | 3,036     | Physics |
+| 30.0                    | 12×   | **2,645** | 20,062 | 16,533 | 3,055 | 3,064 | 3,036     | Physics |
+| 60.0                    | 24×   | **2,804** | 37,832 | 30,649 | 3,055 | 3,064 | 3,036     | Physics |
+| 120.0                   | 48×   | 3,123     | 73,372 | 58,881 | 3,055 | 3,064 | **3,036** | XGBoost |
 
 Machine learning earns its place only where crop stress is catastrophically
 expensive and its systematic over-watering becomes cheap insurance. At every
@@ -79,11 +79,11 @@ them money.
 a wrong `Ra` cancelling against a wrong `Rnl` would pass a final-answer-only
 test.
 
-| FAO-56 example | Case | Computed | Published |
-|---|---|---:|---:|
-| Example 17 | Bangkok, monthly data | 5.72 | 5.72 |
-| Example 18 | Brussels, daily + RH, 10 m wind | 3.88 | 3.88 |
-| Example 20 | Lyon, temperature only | 4.56 | 4.56 |
+| FAO-56 example | Case                            | Computed | Published |
+|----------------|---------------------------------|----------|-----------|
+| Example 17     | Bangkok, monthly data           | 5.72     | 5.72      |
+| Example 18     | Brussels, daily + RH, 10 m wind | 3.88     | 3.88      |
+| Example 20     | Lyon, temperature only          | 4.56     | 4.56      |
 
 Those examples are Bangkok, Brussels and Lyon. None is a desert, so passing
 them says nothing about Dubai.
@@ -93,10 +93,10 @@ unrelated sources — once from published monthly climate normals, once from 30
 years of NASA satellite and reanalysis observations. Neither was tuned to the
 other.
 
-| Route | Annual ET0 |
-|---|---:|
+| Route                      | Annual ET0                        |
+|----------------------------|-----------------------------------|
 | NASA POWER, 1995–2024 mean | **2,275 mm** (2,071–2,392, sd 65) |
-| Published climate normals | **2,224 mm** |
+| Published climate normals  | **2,224 mm**                      |
 
 They agree to 2.3%, and every monthly mean agrees within 0.36 mm/day. Two
 derivations sharing no inputs do not land on the same seasonal curve by
@@ -165,14 +165,14 @@ persistence: "assume tomorrow equals today".
 lag. Much harder, and much closer to the operational case this project cares
 about: no probe, or a probe that has drifted.
 
-| Task | Method | RMSE | MAE | R² |
-|---|---|---:|---:|---:|
-| Forecast | Persistence | 0.00580 | **0.00142** | 0.977 |
-| Forecast | **LSTM** | **0.00467** | 0.00256 | 0.985 |
-| Forecast | GRU | 0.00493 | 0.00267 | 0.984 |
-| Estimate | Climatology | 0.03498 | 0.02316 | 0.175 |
-| Estimate | **LSTM** | **0.02022** | **0.01432** | **0.724** |
-| Estimate | GRU | 0.02147 | 0.01525 | 0.689 |
+| Task     | Method      | RMSE        | MAE         | R²        |
+|----------|-------------|-------------|-------------|-----------|
+| Forecast | Persistence | 0.00580     | **0.00142** | 0.977     |
+| Forecast | **LSTM**    | **0.00467** | 0.00256     | 0.985     |
+| Forecast | GRU         | 0.00493     | 0.00267     | 0.984     |
+| Estimate | Climatology | 0.03498     | 0.02316     | 0.175     |
+| Estimate | **LSTM**    | **0.02022** | **0.01432** | **0.724** |
+| Estimate | GRU         | 0.02147     | 0.01525     | 0.689     |
 
 These figures move in the fifth decimal between runs. cuDNN's recurrent
 kernels are not deterministic by default, so they reproduce in magnitude but
@@ -284,13 +284,13 @@ viz/ app/       charts and dashboard  → accessible by construction
 
 **Layer rules:**
 
-| Layer | May do | May not do |
-|---|---|---|
-| `physics` | Deterministic calculation | I/O, state, any model |
-| `data` | Read committed files | Fetch at runtime |
-| `models` | Estimate depletion | See true soil state |
-| `decision` | Apply cost asymmetry | Estimate anything |
-| `explain` | Assemble prose from given facts | Compute a number |
+| Layer      | May do                          | May not do            |
+|------------|---------------------------------|-----------------------|
+| `physics`  | Deterministic calculation       | I/O, state, any model |
+| `data`     | Read committed files            | Fetch at runtime      |
+| `models`   | Estimate depletion              | See true soil state   |
+| `decision` | Apply cost asymmetry            | Estimate anything     |
+| `explain`  | Assemble prose from given facts | Compute a number      |
 
 A predictor only ever receives an `Observation` — noisy probe reading, weather,
 its own history. A test asserts the true state is not reachable from it,
@@ -332,7 +332,7 @@ because a simulator that leaks the answer proves nothing.
 - NASA Langley Research Center POWER Project, funded through the NASA Earth
   Science Directorate Applied Science Program.
   <https://power.larc.nasa.gov/> — daily climate and soil moisture, 1995–2024.
-- Okabe, M. & Ito, K. (2008). *Color Universal Design.*
+- Okabe, M. & Ito, K. (2008). *Colour Universal Design.*
   <https://jfly.uni-koeln.de/color/> — the chart palette.
 - Constants and their sources: [docs/AGRONOMY.md](docs/AGRONOMY.md).
   Data provenance and limits: [docs/DATA.md](docs/DATA.md).
