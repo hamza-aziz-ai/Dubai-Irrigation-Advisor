@@ -28,13 +28,13 @@ Six ways to decide when to irrigate, run over the same simulated 120-day Dubai
 summer, scored on operating cost rather than prediction error:
 
 | Predictor | Cost (AED) | Water (mm) | Stress days | Drainage (mm) | RMSE (mm) | Bias (mm) |
-|---|---:|---:|---:|---:|---:|---:|
-| **Physics (FAO-56 balance)** | **2,645** | 926 | 5 | 9 | 2.49 | −1.47 |
-| Sensor only | 20,062 | 865 | 99 | 1 | 12.28 | −10.27 |
-| Physics + sensor fusion | 16,533 | 900 | 97 | 4 | 9.96 | −9.25 |
-| Random forest | 3,055 | 1,150 | 0 | 209 | 1.89 | +1.68 |
-| Gradient boosting | 3,064 | 1,154 | 0 | 212 | 1.93 | +1.70 |
-| XGBoost | 3,036 | 1,143 | 0 | 202 | **1.88** | +1.65 |
+|---|------------|------------|-------------|---:|---:|---:|
+| **Physics (FAO-56 balance)** | **2,645**  | 926        | 5           | 9 | 2.49 | −1.47 |
+| Sensor only | 20,062     | 865        | 99          | 1 | 12.28 | −10.27 |
+| Physics + sensor fusion | 16,533     | 900        | 97          | 4 | 9.96 | −9.25 |
+| Random forest | 3,055      | 1,150      | 0           | 209 | 1.89 | +1.68 |
+| Gradient boosting | 3,064      | 1,154      | 0           | 212 | 1.93 | +1.70 |
+| XGBoost | 3,036      | 1,143      | 0           | 202 | **1.88** | +1.65 |
 
 **The most accurate model is not the cheapest to run.** XGBoost predicts
 root-zone depletion more accurately than the physics baseline and still costs
@@ -168,11 +168,17 @@ about: no probe, or a probe that has drifted.
 | Task | Method | RMSE | MAE | R² |
 |---|---|---:|---:|---:|
 | Forecast | Persistence | 0.00580 | **0.00142** | 0.977 |
-| Forecast | **LSTM** | **0.00467** | 0.00255 | 0.985 |
-| Forecast | GRU | 0.00492 | 0.00265 | 0.984 |
+| Forecast | **LSTM** | **0.00467** | 0.00256 | 0.985 |
+| Forecast | GRU | 0.00493 | 0.00267 | 0.984 |
 | Estimate | Climatology | 0.03498 | 0.02316 | 0.175 |
 | Estimate | **LSTM** | **0.02022** | **0.01432** | **0.724** |
-| Estimate | GRU | 0.02148 | 0.01525 | 0.689 |
+| Estimate | GRU | 0.02147 | 0.01525 | 0.689 |
+
+These figures move in the fifth decimal between runs. cuDNN's recurrent
+kernels are not deterministic by default, so they reproduce in magnitude but
+not digit for digit — worth knowing before reading significance into a gap
+that small. Nothing below turns on differences at that scale: the RMSE/MAE
+inversion is a factor of 1.8, not a rounding artefact.
 
 ### The same lesson, arrived at independently
 

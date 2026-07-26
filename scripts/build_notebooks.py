@@ -446,10 +446,10 @@ plt.show()
 results = {}
 for (task, cell), config in configs.items():
     results[(task, cell)] = S.train_sequence_model(datasets[task], config)
-    metrics = results[(task, cell)].metrics
+    scores = results[(task, cell)].metrics
     print(f"{task:9s} {cell.upper():5s} "
-          f"RMSE {metrics['rmse']:.5f}  MAE {metrics['mae']:.5f}  "
-          f"R2 {metrics['r2']:.4f}  (best epoch {results[(task, cell)].best_epoch})")
+          f"RMSE {scores['rmse']:.5f}  MAE {scores['mae']:.5f}  "
+          f"R2 {scores['r2']:.4f}  (best epoch {results[(task, cell)].best_epoch})")
 
 baselines = {
     ("forecast", "Persistence"): S.persistence_baseline(datasets["forecast"]),
@@ -460,9 +460,9 @@ baselines = {
 }
 print()
 for (task, name), predictions in baselines.items():
-    metrics = S.regression_metrics(datasets[task].y_test, predictions)
-    print(f"{task:9s} {name:12s} RMSE {metrics['rmse']:.5f}  "
-          f"MAE {metrics['mae']:.5f}  R2 {metrics['r2']:.4f}")
+    scores = S.regression_metrics(datasets[task].y_test, predictions)
+    print(f"{task:9s} {name:12s} RMSE {scores['rmse']:.5f}  "
+          f"MAE {scores['mae']:.5f}  R2 {scores['r2']:.4f}")
 """),
     ("code", """\
 fig, axes = plt.subplots(1, 2, figsize=(12, 4.6), sharey=False)
@@ -488,7 +488,7 @@ plt.tight_layout()
 plt.show()
 """),
     ("md", """\
-## The result, and the catch
+## The result and the catch
 
 The vertical lines mark where each model was at its best on the validation
 years. Training stopped shortly after and the best weights were restored, so
@@ -503,8 +503,13 @@ rows = [
     ("LSTM", "forecast", results[("forecast", "lstm")].predictions_test),
     ("GRU", "forecast", results[("forecast", "gru")].predictions_test),
 ]
-names = [r[0] for r in rows]
-metrics = [S.regression_metrics(datasets[r[1]].y_test, r[2]) for r in rows]
+# Named distinctly from the `scores` dict above. Notebook cells share one
+# namespace, so reusing `metrics` for both a dict and a list of dicts makes
+# the name mean two things at once - to a reader as much as to a checker.
+names: list[str] = [r[0] for r in rows]
+row_metrics: list[dict[str, float]] = [
+    S.regression_metrics(datasets[r[1]].y_test, r[2]) for r in rows
+]
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 4.4))
 positions = np.arange(len(rows))
@@ -512,7 +517,7 @@ palette = ["#E69F00", "#0072B2", "#009E73"]
 
 for ax, key, title in [(axes[0], "rmse", "Typical error, squared-and-rooted (RMSE)"),
                        (axes[1], "mae", "Typical error, plain average (MAE)")]:
-    values = [m[key] for m in metrics]
+    values = [m[key] for m in row_metrics]
     best = int(np.argmin(values))
     bars = ax.bar(positions, values,
                   color=[palette[i] if i == best else "#BBBBBB" for i in range(len(values))])
@@ -694,24 +699,27 @@ Dubai summer:
   simulated seasons, given the same information plus lagged history.
 """),
     ("code", """\
-names = [r.predictor_name for r in results]
-costs = np.array([r.total_cost for r in results])
-rmse = np.array([r.depletion_rmse for r in results])
+names: list[str] = [r.predictor_name for r in results]
+costs: list[float] = [float(r.total_cost) for r in results]
+rmse: list[float] = [float(r.depletion_rmse) for r in results]
 
 fig, ax = plt.subplots(figsize=(10, 5))
-order = np.argsort(costs)
-positions = np.arange(len(results))
-colours = [colour_for(names[i]) for i in order]
+# Plain lists throughout: these values are only ranked, indexed and formatted,
+# none of which needs an array, and numpy scalars reaching an f-string are
+# what make `{value:,.0f}` unverifiable.
+order = sorted(range(len(costs)), key=lambda i: costs[i])
+positions = range(len(results))
+ranked = [costs[i] for i in order]
 
-bars = ax.barh(positions, costs[order], color=colours)
+bars = ax.barh(positions, ranked, color=[colour_for(names[i]) for i in order])
 ax.set_yticks(positions, [names[i] for i in order])
 ax.set_xlabel("Operating cost over one season (AED)")
 ax.set_xscale("log")
 ax.set_title("Cost to run, lower is better")
 ax.grid(axis="x")
 
-for index, value in enumerate(costs[order]):
-    ax.annotate(f"{float(value):,.0f}", (value, index), va="center",
+for index, value in enumerate(ranked):
+    ax.annotate(f"{value:,.0f}", (value, index), va="center",
                 xytext=(6, 0), textcoords="offset points", fontsize=10)
 
 plt.tight_layout()
@@ -825,7 +833,7 @@ impressive-sounding, and would have cost the client money.
 """),
     ("code", """\
 penalties = [2.5, 5.0, 15.0, 30.0, 60.0, 120.0]
-curves = {name: [] for name in names}
+curves: dict[str, list[float]] = {name: [] for name in names}
 
 for penalty in penalties:
     scenario = run_comparison(crop, soil, root_depth_m=0.5, kc=0.85,
