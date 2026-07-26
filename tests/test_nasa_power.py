@@ -52,8 +52,9 @@ def _date_of(day) -> dt.date:
     Every day loaded from NASA POWER carries one, so the assertion states that
     in a single place rather than leaving each caller to assume it.
     """
-    assert day.date is not None, "NASA POWER days always carry a calendar date"
-    return day.date
+    date = day.date
+    assert date is not None, "NASA POWER days always carry a calendar date"
+    return date
 
 
 # --------------------------------------------------------------------------
@@ -154,14 +155,19 @@ def test_derived_humidity_extremes_are_ordered_and_bounded(records):
 def test_et0_takes_the_dewpoint_route_when_available(weather):
     """FAO-56 Eq. 14 must win over Eq. 17, or the hierarchy is decorative."""
     day = weather[0]
-    assert day.dewpoint_c is not None, "POWER supplies dewpoint for every day"
-    result = et0_for_day(day)
-    assert result.ea == pytest.approx(saturation_vapour_pressure(day.dewpoint_c))
+    # Bound to a local before the None check. Narrowing an attribute
+    # expression works in some checkers and not others; narrowing a plain
+    # local works everywhere.
+    dewpoint = day.dewpoint_c
+    assert dewpoint is not None, "POWER supplies dewpoint for every day"
+    assert et0_for_day(day).ea == pytest.approx(saturation_vapour_pressure(dewpoint))
 
 
 def test_et0_uses_measured_radiation_when_available(weather):
     day = weather[0]
-    assert et0_for_day(day).rs == pytest.approx(day.solar_radiation_mj)
+    radiation = day.solar_radiation_mj
+    assert radiation is not None, "POWER supplies radiation for every day"
+    assert et0_for_day(day).rs == pytest.approx(radiation)
 
 
 # --------------------------------------------------------------------------
