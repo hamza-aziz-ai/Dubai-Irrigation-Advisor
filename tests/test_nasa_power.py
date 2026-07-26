@@ -184,7 +184,7 @@ def test_synthetic_climatology_agrees_with_real_observations(weather, et0_series
 
     `climate/dubai.py` interpolates published monthly normals. This series is
     satellite irradiance plus reanalysis. Nothing links them. Agreement to a
-    few percent is meaningful evidence that both are right; a divergence would
+    few per cent is meaningful evidence that both are right; a divergence would
     mean at least one is wrong and would be worth chasing.
     """
     totals = _annual_totals(weather, et0_series)

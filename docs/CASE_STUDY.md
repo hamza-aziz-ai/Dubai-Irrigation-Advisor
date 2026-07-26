@@ -118,14 +118,14 @@ that as moisture.
 
 ### 4. Decisions evaluated on cost, not error
 
-| Predictor | Cost (AED) | Water (mm) | Stress days | Drainage (mm) | RMSE (mm) |
-|---|---:|---:|---:|---:|---:|
-| **Physics (FAO-56)** | **2,645** | 926 | 5 | 9 | 2.49 |
-| Sensor only | 20,062 | 865 | 99 | 1 | 12.28 |
-| Physics + fusion | 16,533 | 900 | 97 | 4 | 9.96 |
-| Random forest | 3,055 | 1,150 | 0 | 209 | 1.89 |
-| Gradient boosting | 3,064 | 1,154 | 0 | 212 | 1.93 |
-| XGBoost | 3,036 | 1,143 | 0 | 202 | **1.88** |
+| Predictor            | Cost (AED) | Water (mm) | Stress days | Drainage (mm) | RMSE (mm) |
+|----------------------|------------|------------|-------------|---------------|-----------|
+| **Physics (FAO-56)** | **2,645**  | 926        | 5           | 9             | 2.49      |
+| Sensor only          | 20,062     | 865        | 99          | 1             | 12.28     |
+| Physics + fusion     | 16,533     | 900        | 97          | 4             | 9.96      |
+| Random forest        | 3,055      | 1,150      | 0           | 209           | 1.89      |
+| Gradient boosting    | 3,064      | 1,154      | 0           | 212           | 1.93      |
+| XGBoost              | 3,036      | 1,143      | 0           | 202           | **1.88**  |
 
 Four results worth stating plainly.
 

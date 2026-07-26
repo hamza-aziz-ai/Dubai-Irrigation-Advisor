@@ -13,15 +13,15 @@ document covers the second, and says plainly what it can and cannot support.
 **Loader:** `src/irrigation/data/nasa_power.py`
 **Refresh:** `python scripts/fetch_nasa_power.py`
 
-| | |
-|---|---|
-| Source | NASA Langley Research Center POWER Project |
-| Period | 1995-01-01 to 2024-12-31 |
-| Rows | 10,958 days, no gaps, no fill values |
-| Grid cell | 25.25 N, 55.33 E (cell centre), reported elevation 67 m |
+|           |                                                             |
+|-----------|-------------------------------------------------------------|
+| Source    | NASA Langley Research Center POWER Project                  |
+| Period    | 1995-01-01 to 2024-12-31                                    |
+| Rows      | 10,958 days, no gaps, no fill values                        |
+| Grid cell | 25.25 N, 55.33 E (cell centre), reported elevation 67 m     |
 | Cell size | 0.5 deg latitude x 0.625 deg longitude (roughly 55 x 65 km) |
-| Licence | Public domain, no account or key required |
-| Access | One HTTP request, run by hand, cached and committed |
+| Licence   | Public domain, no account or key required                   |
+| Access    | One HTTP request, run by hand, cached and committed         |
 
 ### Why this source
 
@@ -37,20 +37,20 @@ repository reproducible offline and stable over time.
 
 ### Fields used
 
-| Column | POWER parameter | Unit | Notes |
-|---|---|---|---|
-| `tmax_c` | `T2M_MAX` | C | |
-| `tmin_c` | `T2M_MIN` | C | |
-| `tmean_c` | `T2M` | C | |
-| `dewpoint_c` | `T2MDEW` | C | Preferred route to ea (FAO-56 Eq. 14) |
-| `rh_mean_pct` | `RH2M` | % | Mean only; extremes are derived |
-| `wind_2m_ms` | `WS2M` | m/s | Already at 2 m - no Eq. 47 conversion |
-| `wind_10m_ms` | `WS10M` | m/s | Retained to verify the above |
-| `solar_mj` | `ALLSKY_SFC_SW_DWN` | MJ m-2 day-1 | Measured; preferred over Eq. 35 |
-| `rainfall_mm` | `PRECTOTCORR` | mm/day | Bias-corrected |
-| `wetness_top` | `GWETTOP` | 0-1 | Surface layer |
-| `wetness_root` | `GWETROOT` | 0-1 | **Root zone - the sequence-model target** |
-| `wetness_prof` | `GWETPROF` | 0-1 | Full profile |
+| Column         | POWER parameter     | Unit         | Notes                                     |
+|----------------|---------------------|--------------|-------------------------------------------|
+| `tmax_c`       | `T2M_MAX`           | C            |                                           |
+| `tmin_c`       | `T2M_MIN`           | C            |                                           |
+| `tmean_c`      | `T2M`               | C            |                                           |
+| `dewpoint_c`   | `T2MDEW`            | C            | Preferred route to ea (FAO-56 Eq. 14)     |
+| `rh_mean_pct`  | `RH2M`              | %            | Mean only; extremes are derived           |
+| `wind_2m_ms`   | `WS2M`              | m/s          | Already at 2 m - no Eq. 47 conversion     |
+| `wind_10m_ms`  | `WS10M`             | m/s          | Retained to verify the above              |
+| `solar_mj`     | `ALLSKY_SFC_SW_DWN` | MJ m-2 day-1 | Measured; preferred over Eq. 35           |
+| `rainfall_mm`  | `PRECTOTCORR`       | mm/day       | Bias-corrected                            |
+| `wetness_top`  | `GWETTOP`           | 0-1          | Surface layer                             |
+| `wetness_root` | `GWETROOT`          | 0-1          | **Root zone - the sequence-model target** |
+| `wetness_prof` | `GWETPROF`          | 0-1          | Full profile                              |
 
 **The radiation unit is load-bearing.** POWER serves
 `ALLSKY_SFC_SW_DWN` in MJ m-2 day-1 to the `AG` community and in
@@ -82,7 +82,7 @@ someone removed the radiation column.
 ### It can
 
 - Establish reference evapotranspiration for regional Dubai to within a few
-  percent, cross-checked against an independent derivation from published
+  per cent, cross-checked against an independent derivation from published
   climate normals (agreement: 2,275 mm/yr against 2,224 mm/yr).
 - Provide a soil moisture target that is genuinely independent of this
   project's simulator, so a sequence model fitted to it is not fitted to my

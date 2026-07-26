@@ -32,11 +32,11 @@ Choices worth noting:
 FAO-56 Table 12 single crop coefficients. Species chosen for UAE landscape and
 protected agriculture rather than field crops:
 
-| Crop | Kc ini | Kc mid | Kc end | Root depth | p |
-|---|---:|---:|---:|---:|---:|
-| Date palm | 0.90 | 0.95 | 0.95 | 1.5 m | 0.50 |
-| Warm-season turfgrass | 0.80 | 0.85 | 0.85 | 0.5 m | 0.50 |
-| Tomato (protected) | 0.60 | 1.15 | 0.80 | 1.0 m | 0.40 |
+| Crop                  | Kc ini | Kc mid | Kc end | Root depth | p    |
+|-----------------------|--------|--------|--------|------------|------|
+| Date palm             | 0.90   | 0.95   | 0.95   | 1.5 m      | 0.50 |
+| Warm-season turfgrass | 0.80   | 0.85   | 0.85   | 0.5 m      | 0.50 |
+| Tomato (protected)    | 0.60   | 1.15   | 0.80   | 1.0 m      | 0.40 |
 
 ### The depletion fraction adjustment matters more here than elsewhere
 
@@ -59,10 +59,10 @@ a third of a RAW too late. It is a common and expensive mistake.
 
 FAO-56 Table 19. Sand dominates UAE soils and is the hard case:
 
-| Soil | Field capacity | Wilting point | AWC | TAW at 0.5 m |
-|---|---:|---:|---:|---:|
-| Sand | 0.12 | 0.05 | 70 mm/m | 35 mm |
-| Sandy loam | 0.21 | 0.10 | 110 mm/m | 55 mm |
+| Soil       | Field capacity | Wilting point | AWC      | TAW at 0.5 m |
+|------------|----------------|---------------|----------|--------------|
+| Sand       | 0.12           | 0.05          | 70 mm/m  | 35 mm        |
+| Sandy loam | 0.21           | 0.10          | 110 mm/m | 55 mm        |
 
 35 mm of total available water against 8.5 mm/day of demand is roughly **four
 days of buffer at full profile** — and the usable fraction is RAW, about

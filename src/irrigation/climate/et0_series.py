@@ -4,7 +4,7 @@ This module owns exactly one judgement: given whatever a data source happened
 to measure, which FAO-56 route to ea and Rs should be used. FAO-56 ranks those
 routes by accuracy, and the ranking is not a detail - choosing the temperature
 based radiation estimate when measured radiation was available is a several
-percent error in ET0 for no reason at all.
+per cent error in ET0 for no reason at all.
 
 The choice is made here rather than inside `eto_penman_monteith` on purpose.
 The physics function takes ea and Rs as plain numbers so that a reader can see

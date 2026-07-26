@@ -126,7 +126,7 @@ def facts_from_context(context: dict[str, Any]) -> list[NumericFact]:
         NumericFact("root-zone depletion", decision.predicted_depletion_mm, "mm"),
         NumericFact("total available water", taw, "mm"),
         NumericFact("readily available water", decision.raw_mm, "mm"),
-        NumericFact("depletion as percent of total available", depletion_pct, "%"),
+        NumericFact("depletion as percentage of total available", depletion_pct, "%"),
         NumericFact("tomorrow's reference ET0", context["et0_forecast_mm"], "mm/day"),
     ]
     if decision.action == "irrigate":
