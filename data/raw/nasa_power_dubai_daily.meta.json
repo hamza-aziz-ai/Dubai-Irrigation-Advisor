@@ -1,0 +1,93 @@
+{
+  "request_url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M_MAX,T2M_MIN,T2M,T2MDEW,RH2M,WS2M,WS10M,ALLSKY_SFC_SW_DWN,PRECTOTCORR,GWETTOP,GWETROOT,GWETPROF&community=AG&latitude=25.25&longitude=55.33&start=19950101&end=20241231&format=JSON",
+  "requested_point": {
+    "latitude": 25.25,
+    "longitude": 55.33
+  },
+  "grid_cell_point": {
+    "latitude": 25.25,
+    "longitude": 55.33,
+    "elevation_m": 67.09
+  },
+  "downloaded_utc": "2026-07-26T04:14:58.519533+00:00",
+  "row_count": 10958,
+  "columns": {
+    "tmax_c": {
+      "power_parameter": "T2M_MAX",
+      "unit": "C",
+      "description": "max air temperature at 2 m"
+    },
+    "tmin_c": {
+      "power_parameter": "T2M_MIN",
+      "unit": "C",
+      "description": "min air temperature at 2 m"
+    },
+    "tmean_c": {
+      "power_parameter": "T2M",
+      "unit": "C",
+      "description": "mean air temperature at 2 m"
+    },
+    "dewpoint_c": {
+      "power_parameter": "T2MDEW",
+      "unit": "C",
+      "description": "dewpoint temperature at 2 m"
+    },
+    "rh_mean_pct": {
+      "power_parameter": "RH2M",
+      "unit": "%",
+      "description": "mean relative humidity at 2 m"
+    },
+    "wind_2m_ms": {
+      "power_parameter": "WS2M",
+      "unit": "m/s",
+      "description": "wind speed at 2 m"
+    },
+    "wind_10m_ms": {
+      "power_parameter": "WS10M",
+      "unit": "m/s",
+      "description": "wind speed at 10 m"
+    },
+    "solar_mj": {
+      "power_parameter": "ALLSKY_SFC_SW_DWN",
+      "unit": "MJ m-2 day-1",
+      "description": "all-sky downward shortwave"
+    },
+    "rainfall_mm": {
+      "power_parameter": "PRECTOTCORR",
+      "unit": "mm/day",
+      "description": "bias-corrected precipitation"
+    },
+    "wetness_top": {
+      "power_parameter": "GWETTOP",
+      "unit": "0-1",
+      "description": "surface soil wetness"
+    },
+    "wetness_root": {
+      "power_parameter": "GWETROOT",
+      "unit": "0-1",
+      "description": "root-zone soil wetness"
+    },
+    "wetness_prof": {
+      "power_parameter": "GWETPROF",
+      "unit": "0-1",
+      "description": "profile soil wetness"
+    }
+  },
+  "power_header": {
+    "title": "NASA/POWER Source Native Resolution Daily Data",
+    "api": {
+      "version": "v2.9.5",
+      "name": "POWER Daily API"
+    },
+    "sources": [
+      "SRB",
+      "SYN1DEG",
+      "MERRA2",
+      "POWER"
+    ],
+    "fill_value": -999.0,
+    "time_standard": "LST",
+    "start": "19950101",
+    "end": "20241231"
+  }
+}

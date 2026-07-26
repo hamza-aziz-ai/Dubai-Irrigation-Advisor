@@ -1,0 +1,31 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[[source]]
+url = "https://download.pytorch.org/whl/cu132"
+verify_ssl = true
+name = "downloadpytorch"
+
+[packages]
+numpy = "*"
+pandas = "*"
+scikit-learn = "*"
+xgboost = "*"
+matplotlib = "*"
+seaborn = "*"
+jupyter = "*"
+streamlit = "*"
+ollama = "*"
+python-dotenv = "*"
+langchain = "*"
+torch = {version = "*", index = "downloadpytorch"}
+torchvision = {version = "*", index = "downloadpytorch"}
+
+[dev-packages]
+pytest = "*"
+
+[requires]
+python_version = "3.14"
+python_full_version = "3.14.6"
