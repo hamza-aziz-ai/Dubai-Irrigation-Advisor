@@ -176,7 +176,7 @@ def make_windows(
 
 @dataclass
 class Dataset:
-    """Windowed, split, and standardised arrays ready for training."""
+    """Windowed, split, and standardized arrays ready for training."""
 
     x_train: np.ndarray
     y_train: np.ndarray
@@ -193,9 +193,9 @@ class Dataset:
 
 
 def build_dataset(records: Sequence[PowerRecord], config: SequenceConfig) -> Dataset:
-    """Windows, chronological split, and standardisation fitted on train only.
+    """Windows, chronological split, and standardization fitted on train only.
 
-    The standardiser is the subtle leak. Fitting mean and standard deviation
+    The standardizer is the subtle leak. Fitting mean and standard deviation
     over the whole series lets the test years influence the scaling of the
     training years - a small effect, invisible in any loss curve, and enough
     to make a reported test score unreproducible on genuinely unseen data.
@@ -225,16 +225,16 @@ def build_dataset(records: Sequence[PowerRecord], config: SequenceConfig) -> Dat
     std = flat.std(axis=0)
     std[std < 1e-8] = 1.0
 
-    def standardise(block: np.ndarray) -> np.ndarray:
+    def standardize(block: np.ndarray) -> np.ndarray:
         return ((block - mean) / std).astype(np.float32)
 
     def dates_where(mask: np.ndarray) -> list[_dt.date]:
         return [d for d, keep_it in zip(label_dates, mask) if keep_it]
 
     return Dataset(
-        x_train=standardise(windows[train]), y_train=labels[train],
-        x_val=standardise(windows[val]), y_val=labels[val],
-        x_test=standardise(windows[test]), y_test=labels[test],
+        x_train=standardize(windows[train]), y_train=labels[train],
+        x_val=standardize(windows[val]), y_val=labels[val],
+        x_test=standardize(windows[test]), y_test=labels[test],
         dates_train=dates_where(train),
         dates_val=dates_where(val),
         dates_test=dates_where(test),
@@ -305,7 +305,7 @@ def train_sequence_model(dataset: Dataset, config: SequenceConfig) -> TrainingRe
 
     Early stopping watches the validation split and the best weights are
     restored at the end, so the reported test score comes from the model that
-    generalised best rather than the one that trained longest. The test years
+    generalized best rather than the one that trained longest. The test years
     are touched exactly once, after that choice is already made.
     """
     import torch
@@ -316,7 +316,7 @@ def train_sequence_model(dataset: Dataset, config: SequenceConfig) -> TrainingRe
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = build_network(config, dataset.x_train.shape[-1]).to(device)
-    optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     loss_fn = torch.nn.MSELoss()
 
     def tensors(x: np.ndarray, y: np.ndarray):
@@ -344,10 +344,10 @@ def train_sequence_model(dataset: Dataset, config: SequenceConfig) -> TrainingRe
         model.train()
         batch_losses = []
         for xb, yb in loader:
-            optimiser.zero_grad()
+            optimizer.zero_grad()
             loss = loss_fn(model(xb), yb)
             loss.backward()
-            optimiser.step()
+            optimizer.step()
             batch_losses.append(loss.item())
         train_losses.append(float(np.mean(batch_losses)))
 
@@ -397,7 +397,7 @@ def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, floa
 def persistence_baseline(dataset: Dataset, config: SequenceConfig) -> np.ndarray:
     """Tomorrow equals today. The bar the FORECAST task must clear.
 
-    Reads the last timestep's `wetness_root` back out of the standardised
+    Reads the last timestep's `wetness_root` back out of the standardized
     window, which is only possible because that feature exists for this task -
     hence the guard. For ESTIMATE there is no soil moisture input and no
     persistence baseline to construct.
@@ -405,8 +405,8 @@ def persistence_baseline(dataset: Dataset, config: SequenceConfig) -> np.ndarray
     if TARGET not in dataset.feature_names:
         raise ValueError("persistence needs soil moisture in the features (forecast task)")
     index = dataset.feature_names.index(TARGET)
-    standardised = dataset.x_test[:, -1, index]
-    return standardised * dataset.std[index] + dataset.mean[index]
+    standardized = dataset.x_test[:, -1, index]
+    return standardized * dataset.std[index] + dataset.mean[index]
 
 
 def climatology_baseline(

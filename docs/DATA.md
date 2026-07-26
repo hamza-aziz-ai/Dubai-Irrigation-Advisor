@@ -109,7 +109,7 @@ Independent of this project, but modelled.
 
 **Validate the sensor simulator.** There is no in-situ probe data here. The
 sensor pathologies in `climate/sensor.py` - calibration offset, salinity
-drift, dropout, quantisation - are modelled from the literature on why field
+drift, dropout, quantization - are modelled from the literature on why field
 deployments fail, not fitted to logged failures.
 
 ---

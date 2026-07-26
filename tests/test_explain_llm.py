@@ -18,7 +18,7 @@ from irrigation.explain.llm import (
     OllamaExplainer,
     build_prompt,
     facts_from_context,
-    normalise,
+    normalize,
     ungrounded_numbers,
 )
 from irrigation.physics.crop import CROPS, SOILS
@@ -57,23 +57,23 @@ class StubOllama(OllamaExplainer):
     def _generate(self, context, facts) -> str:
         if self._error is not None:
             raise self._error
-        return normalise(self._output or "")
+        return normalize(self._output or "")
 
 
 # --------------------------------------------------------------------------
-# Normalisation
+# Normalization
 # --------------------------------------------------------------------------
-class TestNormalise:
+class TestNormalize:
     def test_folds_unicode_punctuation_to_ascii(self):
-        assert normalise("root‑zone ‘wet’") == "root-zone 'wet'"
+        assert normalize("root‑zone ‘wet’") == "root-zone 'wet'"
 
     def test_output_is_pure_ascii(self):
         """A cp1252 console raises on non-ASCII, which would crash the demo."""
-        result = normalise("ET₀ ≈ 8.4 mm day⁻¹ × 2")
+        result = normalize("ET₀ ≈ 8.4 mm day⁻¹ × 2")
         assert result.encode("ascii")
 
     def test_collapses_whitespace(self):
-        assert normalise("a  b\n\nc") == "a b c"
+        assert normalize("a  b\n\nc") == "a b c"
 
 
 # --------------------------------------------------------------------------
@@ -111,14 +111,14 @@ class TestGrounding:
         assert 1.1 in found
 
     def test_superscript_digits_cannot_smuggle_a_number(self, facts, context):
-        """The reason normalisation runs before verification, not after.
+        """The reason normalization runs before verification, not after.
 
         Unicode superscripts are digits that the number regex does not match.
         Without folding, this string would verify clean while stating a
         fabricated application depth.
         """
         raw = "Apply ²².⁷ mm today."
-        assert ungrounded_numbers(normalise(raw), facts, context["citations"]) == [22.7]
+        assert ungrounded_numbers(normalize(raw), facts, context["citations"]) == [22.7]
 
     def test_unit_exponents_are_not_treated_as_quantities(self, facts, context):
         """`mm day-1` and `MJ m-2` are units. Flagging them would fail

@@ -125,7 +125,7 @@ def test_split_boundaries_match_the_configured_years(forecast_dataset, forecast_
     assert max(forecast_dataset.dates_test).year == splits.test_end
 
 
-def test_standardiser_is_fitted_on_training_data_only(records, forecast_dataset, forecast_config):
+def test_standardizer_is_fitted_on_training_data_only(records, forecast_dataset, forecast_config):
     """The invisible leak.
 
     Fitting the scaler over the full series lets the test years shift the
@@ -133,7 +133,7 @@ def test_standardiser_is_fitted_on_training_data_only(records, forecast_dataset,
     the reported score irreproducible on genuinely unseen data.
 
     Asserted against the scaler's own statistics rather than by checking that
-    the standardised training block has zero mean. That round-trip is true but
+    the standardized training block has zero mean. That round-trip is true but
     untestable at useful precision: the block is float32 and about 170,000
     rows deep, and for soil moisture - small magnitude, small spread - the
     accumulated rounding divided by a std of ~0.02 is larger than any
@@ -194,7 +194,7 @@ def test_no_nan_or_inf_reaches_the_model(forecast_dataset, estimate_dataset):
 # Baselines
 # --------------------------------------------------------------------------
 def test_persistence_recovers_the_previous_days_wetness(forecast_dataset, forecast_config):
-    """De-standardisation must invert exactly, or the baseline is handicapped.
+    """De-standardization must invert exactly, or the baseline is handicapped.
 
     A baseline that is accidentally weakened is worse than no baseline: it
     makes the model look good and gives no warning.

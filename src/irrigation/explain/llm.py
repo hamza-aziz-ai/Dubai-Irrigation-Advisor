@@ -73,7 +73,7 @@ _UNICODE_REPLACEMENTS = {
 _UNIT_EXPONENT_PATTERN = re.compile(r"(?<=[A-Za-z])-\d+\b")
 
 
-def normalise(text: str) -> str:
+def normalize(text: str) -> str:
     """Fold model output to ASCII and collapse whitespace.
 
     Beyond closing the verification hole above, this keeps generated prose
@@ -277,7 +277,7 @@ class OllamaExplainer:
         # gpt-oss models expose chain-of-thought in a separate `thinking`
         # field. Only `content` is used: reasoning text is unverified by
         # construction and must never reach the grounds manager.
-        return normalise(response.message.content or "")
+        return normalize(response.message.content or "")
 
     def explain(self, context: dict[str, Any]) -> Explanation:
         self.last_failure = None

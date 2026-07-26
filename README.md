@@ -216,7 +216,7 @@ of the deterministic explainer.
 
 Two details that matter more than they look:
 
-- **Normalisation runs before verification.** Models emit `ET₀` and `mm day⁻¹`
+- **Normalization runs before verification.** Models emit `ET₀` and `mm day⁻¹`
   with subscript and superscript digits, which a number regex cannot see. A
   model could state a fabricated `²².⁷` and walk straight past the check.
   Folding to ASCII first closes that hole — there is an adversarial test for
@@ -301,7 +301,7 @@ because a simulator that leaks the answer proves nothing.
 - **No in-situ soil moisture.** A separate hardware workstream builds the ESP32
   probe. The simulated sensor carries the failure modes that break real
   deployments — calibration offset, salinity drift, dropout, 12-bit
-  quantisation — but it is a model of a probe, not a probe.
+  quantization — but it is a model of a probe, not a probe.
 - **The sequence models are not wired into the decision loop.** They are
   trained on desert soil moisture, and using them to schedule irrigation on a
   watered plot would be exactly the overclaim this project exists to expose.

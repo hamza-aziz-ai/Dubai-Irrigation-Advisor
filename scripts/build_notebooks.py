@@ -470,7 +470,7 @@ plt.show()
 
 The vertical lines mark where each model was at its best on the validation
 years. Training stopped shortly after and the best weights were restored, so
-the test scores below come from the model that generalised best rather than
+the test scores below come from the model that generalized best rather than
 the one that trained longest.
 
 Now the interesting part.
@@ -796,7 +796,7 @@ boosting and XGBoost are three different learning algorithms - one that cannot
 extrapolate beyond its training range and two that can. All three land on the
 same side of the truth. Swapping the estimator does not fix it, because the
 estimator was never what was wrong: fitting to squared error produces a model
-optimised for a symmetric world, and this world is not symmetric.
+optimized for a symmetric world, and this world is not symmetric.
 
 Reporting "we trained a model and reached 1.9 mm RMSE" would have been true,
 impressive-sounding, and would have cost the client money.

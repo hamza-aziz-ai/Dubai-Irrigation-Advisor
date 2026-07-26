@@ -497,7 +497,7 @@ validation - but it is not an irrigated root zone.
 
 **The sensor is simulated.** A separate hardware workstream builds the real
 probe. The simulation carries the failure modes that break field deployments -
-calibration offset, salinity drift, dropout, quantisation - but it is a model
+calibration offset, salinity drift, dropout, quantization - but it is a model
 of a probe, not a probe.
 
 **Costs are a policy choice, not a measurement.** The stress-to-water ratio is

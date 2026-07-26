@@ -78,7 +78,7 @@ part of the data (`WIND_10M_MS`, `WIND_MEASUREMENT_HEIGHT_M`) and converting
 at point of use, with a regression test. A bare list of numbers with no stated
 units is how this error gets reintroduced in six months.
 
-**The generalisable lesson: validate magnitude against an external reference,
+**The generalizable lesson: validate magnitude against an external reference,
 not just shape against intuition.** Plausible-looking output is the most
 dangerous kind.
 
@@ -110,7 +110,7 @@ drifts first.**
 Since no sensor data existed, I built the simulator instead: validated ET0
 drives a real soil water balance, which drives a simulated probe carrying the
 failure modes that break field deployments — calibration offset, salinity
-drift, noise, dropout, 12-bit quantisation.
+drift, noise, dropout, 12-bit quantization.
 
 Salinity drift is not incidental in the Gulf. Irrigation water is desalinated
 or brackish, salts accumulate in the root zone, and capacitance probes read
@@ -168,7 +168,7 @@ depletion is not reachable from it — a simulator that leaks proves nothing.
 
 **Training and evaluation use different weather seeds**, and training data is
 generated under the physics policy. A model that only ever sees states a
-broken controller visits will not generalise to a working one.
+broken controller visits will not generalize to a working one.
 
 **Cost parameters are exposed, not buried.** The 12:1 stress-to-water ratio is
 a policy judgement, not a measurement. It is a constructor argument, and the

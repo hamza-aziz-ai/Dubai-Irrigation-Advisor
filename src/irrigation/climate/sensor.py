@@ -7,7 +7,7 @@ pipeline validated only on clean data will meet none of them:
   * drift               - slow bias growth from salinity and electrode ageing
   * measurement noise   - thermal and electronic
   * dropout             - power, radio or waterlogging outages
-  * quantisation        - a 12-bit ADC does not produce a real number
+  * quantization        - a 12-bit ADC does not produce a real number
 
 Salinity drift is not incidental in the Gulf: irrigation water is commonly
 desalinated or brackish, salts accumulate in the root zone, and capacitance
