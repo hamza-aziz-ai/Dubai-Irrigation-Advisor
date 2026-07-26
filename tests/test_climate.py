@@ -4,7 +4,7 @@ import pytest
 
 from irrigation.climate.dubai import (
     MONTH_STARTS, WIND_10M_MS, WIND_MEASUREMENT_HEIGHT_M,
-    DubaiWeatherGenerator, normals_day,
+    DubaiWeatherGenerator, interpolate_monthly, normals_day,
 )
 from irrigation.climate.et0_series import et0_for_day
 from irrigation.climate.sensor import (
@@ -22,7 +22,8 @@ class TestET0Climatology:
     regression test for it.
     """
 
-    def annual_et0(self) -> float:
+    @staticmethod
+    def annual_et0() -> float:
         return sum(
             et0_for_day(normals_day(s + 14)).et0_mm_day * DAYS_IN_MONTH[i]
             for i, s in enumerate(MONTH_STARTS)
@@ -55,8 +56,8 @@ class TestET0Climatology:
 
 
 def _interp_wind(doy: int) -> float:
-    from irrigation.climate.dubai import _interpolate_monthly
-    return _interpolate_monthly(WIND_10M_MS, doy)
+    """The 10 m normal for a day, before the Eq. 47 reduction to 2 m."""
+    return interpolate_monthly(WIND_10M_MS, doy)
 
 
 class TestWeatherGenerator:
@@ -93,7 +94,12 @@ class TestSensor:
         """Salinity accumulation makes the probe read progressively wetter."""
         cfg = SensorConfig(dropout_probability=0.0, noise_std=0.0)
         s = SoilMoistureSensor(cfg, seed=1)
-        assert s.read(120, 0.10).measured_vwc > s.read(0, 0.10).measured_vwc
+        # dropout_probability is 0, so neither reading can be None. Pulled out
+        # and asserted so the comparison is between two floats.
+        later = s.read(120, 0.10).measured_vwc
+        earlier = s.read(0, 0.10).measured_vwc
+        assert later is not None and earlier is not None
+        assert later > earlier
 
     def test_dropouts_occur_and_are_flagged(self):
         s = SoilMoistureSensor(SensorConfig(dropout_probability=0.5), seed=2)

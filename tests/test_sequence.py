@@ -11,8 +11,6 @@ deterministic. Model quality is the notebook's job, not the suite's.
 """
 from __future__ import annotations
 
-import datetime as dt
-
 import numpy as np
 import pytest
 
@@ -79,8 +77,8 @@ def test_estimate_task_never_sees_soil_moisture(estimate_dataset):
 def test_forecast_window_stops_before_the_target_day(records, forecast_config):
     """A forecast that can see the day it is forecasting is not a forecast.
 
-    Checked structurally: the last row of window i must equal the raw feature
-    row for day i-1, never day i.
+    Checked structurally: the last row of window `i` must equal the raw
+    feature row for day `i-1`, never day `i`.
     """
     features, targets, dates, _ = S.build_frame(records[:200])
     windows, labels, label_dates = S.make_windows(
@@ -242,7 +240,7 @@ def test_perfect_prediction_scores_r2_of_one():
 # Training loop
 # --------------------------------------------------------------------------
 @pytest.mark.parametrize("cell", ["lstm", "gru"])
-def test_training_runs_and_is_deterministic(records, cell):
+def test_training_runs_and_is_deterministic(records, cell: S.CellType):
     """Tiny by design - this asserts the loop works, not that it works well."""
     pytest.importorskip("torch")
     config = S.SequenceConfig(

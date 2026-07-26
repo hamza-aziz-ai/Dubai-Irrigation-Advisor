@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from irrigation.physics.crop import CROPS, SANDY, SANDY_LOAM, SOILS
+from irrigation.physics.crop import CROPS, SANDY, SANDY_LOAM
 from irrigation.physics.soil_water import step, water_stress_coefficient
 
 TURF = CROPS["turfgrass"]

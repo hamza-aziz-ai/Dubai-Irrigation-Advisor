@@ -119,7 +119,7 @@ def month_of_year(day_of_year: int) -> int:
     return 0
 
 
-def _interpolate_monthly(values: Sequence[float], day_of_year: int) -> float:
+def interpolate_monthly(values: Sequence[float], day_of_year: int) -> float:
     """
     Smooth monthly normals across the year.
 
@@ -155,24 +155,24 @@ class DubaiWeatherGenerator:
 
     def day(self, day_of_year: int) -> DailyWeather:
         rng = self._rng
-        tmax = _interpolate_monthly(TMAX_C, day_of_year) + rng.normal(0, 2.0)
-        tmin = _interpolate_monthly(TMIN_C, day_of_year) + rng.normal(0, 1.5)
+        tmax = interpolate_monthly(TMAX_C, day_of_year) + rng.normal(0, 2.0)
+        tmin = interpolate_monthly(TMIN_C, day_of_year) + rng.normal(0, 1.5)
         tmin = min(tmin, tmax - 3.0)      # keep the diurnal range physical
 
         rh_max = float(min(100.0, max(20.0,
-            _interpolate_monthly(RH_MAX_PCT, day_of_year) + rng.normal(0, 5.0))))
+            interpolate_monthly(RH_MAX_PCT, day_of_year) + rng.normal(0, 5.0))))
         rh_min = float(min(rh_max - 2.0, max(5.0,
-            _interpolate_monthly(RH_MIN_PCT, day_of_year) + rng.normal(0, 6.0))))
+            interpolate_monthly(RH_MIN_PCT, day_of_year) + rng.normal(0, 6.0))))
 
-        wind_10m = max(0.5, _interpolate_monthly(WIND_10M_MS, day_of_year)
+        wind_10m = max(0.5, interpolate_monthly(WIND_10M_MS, day_of_year)
                        + rng.normal(0, 1.0))
         wind = float(wind_speed_at_2m(wind_10m, WIND_MEASUREMENT_HEIGHT_M))
-        sun = float(max(0.0, min(13.0, _interpolate_monthly(SUNSHINE_H, day_of_year)
+        sun = float(max(0.0, min(13.0, interpolate_monthly(SUNSHINE_H, day_of_year)
                                  + rng.normal(0, 1.2))))
 
         # Rainfall: rare, and intense when it happens. A Gaussian would be the
         # wrong shape entirely - most days are exactly zero.
-        monthly = _interpolate_monthly(RAIN_MM_MONTH, day_of_year)
+        monthly = interpolate_monthly(RAIN_MM_MONTH, day_of_year)
         rain = 0.0
         if monthly > 0.1:
             p_wet = min(0.25, monthly / 120.0)
@@ -199,13 +199,13 @@ def normals_day(day_of_year: int) -> DailyWeather:
     """
     return DailyWeather(
         day_of_year=day_of_year,
-        tmax_c=_interpolate_monthly(TMAX_C, day_of_year),
-        tmin_c=_interpolate_monthly(TMIN_C, day_of_year),
-        rh_max_pct=_interpolate_monthly(RH_MAX_PCT, day_of_year),
-        rh_min_pct=_interpolate_monthly(RH_MIN_PCT, day_of_year),
+        tmax_c=interpolate_monthly(TMAX_C, day_of_year),
+        tmin_c=interpolate_monthly(TMIN_C, day_of_year),
+        rh_max_pct=interpolate_monthly(RH_MAX_PCT, day_of_year),
+        rh_min_pct=interpolate_monthly(RH_MIN_PCT, day_of_year),
         wind_2m_ms=wind_speed_at_2m(
-            _interpolate_monthly(WIND_10M_MS, day_of_year), WIND_MEASUREMENT_HEIGHT_M
+            interpolate_monthly(WIND_10M_MS, day_of_year), WIND_MEASUREMENT_HEIGHT_M
         ),
-        sunshine_hours=_interpolate_monthly(SUNSHINE_H, day_of_year),
+        sunshine_hours=interpolate_monthly(SUNSHINE_H, day_of_year),
         rainfall_mm=0.0,
     )

@@ -46,6 +46,16 @@ def et0_series(weather) -> list[float]:
     return [et0_for_day(day).et0_mm_day for day in weather]
 
 
+def _date_of(day) -> dt.date:
+    """`DailyWeather.date` is optional in general - a generated day has none.
+
+    Every day loaded from NASA POWER carries one, so the assertion states that
+    in a single place rather than leaving each caller to assume it.
+    """
+    assert day.date is not None, "NASA POWER days always carry a calendar date"
+    return day.date
+
+
 # --------------------------------------------------------------------------
 # The cache itself
 # --------------------------------------------------------------------------
@@ -144,6 +154,7 @@ def test_derived_humidity_extremes_are_ordered_and_bounded(records):
 def test_et0_takes_the_dewpoint_route_when_available(weather):
     """FAO-56 Eq. 14 must win over Eq. 17, or the hierarchy is decorative."""
     day = weather[0]
+    assert day.dewpoint_c is not None, "POWER supplies dewpoint for every day"
     result = et0_for_day(day)
     assert result.ea == pytest.approx(saturation_vapour_pressure(day.dewpoint_c))
 
@@ -159,7 +170,7 @@ def test_et0_uses_measured_radiation_when_available(weather):
 def _annual_totals(weather, et0_series) -> dict[int, float]:
     totals: dict[int, float] = defaultdict(float)
     for day, et0 in zip(weather, et0_series):
-        totals[day.date.year] += et0
+        totals[_date_of(day).year] += et0
     return dict(totals)
 
 
@@ -207,7 +218,7 @@ def test_seasonal_shape_matches_month_by_month(weather, et0_series):
     """
     real_by_month: dict[int, list[float]] = defaultdict(list)
     for day, et0 in zip(weather, et0_series):
-        real_by_month[day.date.month].append(et0)
+        real_by_month[_date_of(day).month].append(et0)
 
     synthetic_by_month: dict[int, list[float]] = defaultdict(list)
     for day_of_year in range(1, 366):
@@ -228,7 +239,7 @@ def test_summer_peak_lands_in_the_right_month(weather, et0_series):
     """June or July. If ET0 peaks in April the astronomical terms are broken."""
     by_month: dict[int, list[float]] = defaultdict(list)
     for day, et0 in zip(weather, et0_series):
-        by_month[day.date.month].append(et0)
+        by_month[_date_of(day).month].append(et0)
     peak_month = max(by_month, key=lambda m: sum(by_month[m]) / len(by_month[m]))
     assert peak_month in (6, 7)
 
@@ -256,9 +267,7 @@ def test_daily_rainfall_never_approaches_daily_demand(records):
     If any month's mean daily rainfall rivalled its mean daily ET0, irrigation
     scheduling in that month would be a different problem.
     """
-    from collections import defaultdict as _defaultdict
-
-    rain_by_month: dict[int, list[float]] = _defaultdict(list)
+    rain_by_month: dict[int, list[float]] = defaultdict(list)
     for record in records:
         rain_by_month[record.date.month].append(record.rainfall_mm)
 

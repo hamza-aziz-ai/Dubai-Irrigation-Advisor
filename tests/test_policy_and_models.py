@@ -4,10 +4,10 @@ import pytest
 
 from irrigation.decision.policy import CostModel, decide
 from irrigation.explain.advisor import explain_decision, retrieve
-from irrigation.physics.crop import CROPS, SOILS
 from irrigation.models.evaluate import run_comparison
-from irrigation.models.predictors import PhysicsBalance, SensorDirect
+from irrigation.models.predictors import PhysicsBalance
 from irrigation.models.simulate import simulate_season
+from irrigation.physics.crop import CROPS, SOILS
 
 TURF, SAND = CROPS["turfgrass"], SOILS["sand"]
 KW = dict(crop=TURF, soil=SAND, root_depth_m=0.5, kc=0.85)
@@ -157,8 +157,10 @@ class TestModelComparison:
 class TestSimulatorIntegrity:
     def test_predictor_cannot_observe_true_state(self):
         """Observation carries only field-available information."""
+        from dataclasses import fields as dataclass_fields
+
         from irrigation.models.predictors import Observation
-        fields = set(Observation.__dataclass_fields__)
+        fields = {f.name for f in dataclass_fields(Observation)}
         assert "true_depletion" not in fields
         assert "depletion_mm" not in fields
 
