@@ -43,7 +43,7 @@ def solar_radiation_for(
 ) -> float:
     """Best available Rs for a day [MJ m-2 day-1].
 
-    A measured value is used as-is. Otherwise the Angstrom formula (Eq. 35)
+    A measured value is used as-is. Otherwise, the Angstrom formula (Eq. 35)
     converts sunshine duration, which carries the uncertainty of the a_s/b_s
     coefficients - calibrated regionally, and left at FAO's default here.
     """

@@ -72,26 +72,36 @@ def interpolate_dropouts(readings: list[SensorReading]) -> list[float]:
     """Fill gaps by linear interpolation, holding at the edges.
 
     A gap must be filled, not skipped: irrigation has to be decided every day
-    whether or not the probe reported. Interpolating is honest about the
+    whether the probe reported. Interpolating is honest about the
     uncertainty in a way that carrying the last value forward is not - a held
     value looks like a real measurement to everything downstream.
     """
     values: list[float | None] = [r.measured_vwc for r in readings]
-    known = [i for i, v in enumerate(values) if v is not None]
+
+    # Keyed by index rather than a list of indices into `values`. Both express
+    # the same thing, but this one carries the guarantee in the type: every
+    # value in `known` is a float, so no lookup below needs a reader - or a
+    # type checker - to reconstruct why `values[known[0]]` cannot be None.
+    known: dict[int, float] = {
+        i: value for i, value in enumerate(values) if value is not None
+    }
     if not known:
         raise ValueError("Sensor produced no readings at all - cannot interpolate")
 
+    reported = sorted(known)
+    first, last = reported[0], reported[-1]
+
     out: list[float] = []
-    for i, v in enumerate(values):
-        if v is not None:
-            out.append(v)
-        elif i < known[0]:
-            out.append(values[known[0]])
-        elif i > known[-1]:
-            out.append(values[known[-1]])
+    for i, value in enumerate(values):
+        if value is not None:
+            out.append(value)
+        elif i < first:
+            out.append(known[first])
+        elif i > last:
+            out.append(known[last])
         else:
-            lo = max(k for k in known if k < i)
-            hi = min(k for k in known if k > i)
-            w = (i - lo) / (hi - lo)
-            out.append(values[lo] * (1 - w) + values[hi] * w)
+            lo = max(k for k in reported if k < i)
+            hi = min(k for k in reported if k > i)
+            weight = (i - lo) / (hi - lo)
+            out.append(known[lo] * (1 - weight) + known[hi] * weight)
     return out

@@ -8,7 +8,7 @@ from irrigation.climate.dubai import (
 )
 from irrigation.climate.et0_series import et0_for_day
 from irrigation.climate.sensor import (
-    SensorConfig, SoilMoistureSensor, interpolate_dropouts,
+    SensorConfig, SensorReading, SoilMoistureSensor, interpolate_dropouts,
 )
 
 DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -119,3 +119,38 @@ class TestSensor:
         s = SoilMoistureSensor(SensorConfig(dropout_probability=1.0), seed=4)
         with pytest.raises(ValueError, match="no readings"):
             interpolate_dropouts(s.read_series([0.10] * 10))
+
+    # The tests above run on a constant series, where any gap-filling rule
+    # looks correct because every answer is 0.10. These use a varying series,
+    # so the interior slope and the edge-holding rule are actually exercised.
+
+    def test_interior_gap_is_filled_by_linear_interpolation(self):
+        readings = [
+            SensorReading(0, 0.0, 0.10),
+            SensorReading(1, 0.0, None),
+            SensorReading(2, 0.0, None),
+            SensorReading(3, 0.0, 0.40),
+        ]
+        assert interpolate_dropouts(readings) == pytest.approx([0.10, 0.20, 0.30, 0.40])
+
+    def test_leading_and_trailing_gaps_hold_the_nearest_reading(self):
+        """Held flat, not extrapolated.
+
+        Extrapolating past the last real measurement would invent a trend the
+        probe never reported, and the irrigation decision would act on it.
+        """
+        readings = [
+            SensorReading(0, 0.0, None),
+            SensorReading(1, 0.0, 0.20),
+            SensorReading(2, 0.0, 0.30),
+            SensorReading(3, 0.0, None),
+        ]
+        assert interpolate_dropouts(readings) == pytest.approx([0.20, 0.20, 0.30, 0.30])
+
+    def test_a_single_surviving_reading_fills_the_whole_series(self):
+        readings = [
+            SensorReading(0, 0.0, None),
+            SensorReading(1, 0.0, 0.17),
+            SensorReading(2, 0.0, None),
+        ]
+        assert interpolate_dropouts(readings) == pytest.approx([0.17, 0.17, 0.17])
