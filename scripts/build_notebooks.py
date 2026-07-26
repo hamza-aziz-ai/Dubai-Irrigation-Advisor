@@ -9,6 +9,19 @@ recover.
 
 Execution needs a working torch install and a few minutes on a GPU. Nothing
 here touches the network: the notebooks read the committed NASA POWER cache.
+
+BACKSLASHES IN THE CELL STRINGS MUST STAY DOUBLED
+
+The triple-quoted blocks below are not text - they are Python source for
+another file. A `\\n` written here becomes the two characters `\\` and `n` in
+the generated cell, which Python then reads as an escape and matplotlib
+renders as a line break in a chart label. Exactly what is wanted.
+
+Automated "redundant escape sequence" fixes get this wrong, because from
+inside this file the escape does look redundant. Collapsing `\\n` to a real
+newline splits the f-string across two physical lines and the generated
+notebook dies with `unterminated f-string literal`. It has happened once
+already, to the annotation in the cost-crossover chart.
 """
 from __future__ import annotations
 
