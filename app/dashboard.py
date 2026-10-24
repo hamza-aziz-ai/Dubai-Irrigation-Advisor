@@ -25,6 +25,7 @@ laptop screen shared in a meeting room. So:
 from __future__ import annotations
 
 import datetime as dt
+import os
 import sys
 from pathlib import Path
 from typing import Any, TypedDict
@@ -38,8 +39,8 @@ import streamlit as st
 from irrigation.climate.et0_series import et0_for_day
 from irrigation.data.nasa_power import load_metadata, load_records, load_weather
 from irrigation.decision.policy import CostModel, decide
-from irrigation.explain.advisor import ExplanationEngine, explain_decision
-from irrigation.explain.llm import build_llm_explainer
+from irrigation.explain.advisor import ExplanationEngine, OfflineExplainer, explain_decision
+from irrigation.explain.llm import ENGINE_ENV_VAR, build_llm_explainer
 from irrigation.models.evaluate import run_comparison
 from irrigation.physics.crop import CROPS, SOILS
 from irrigation.viz import apply_style, colour_for, marker_for
@@ -182,7 +183,7 @@ water_cost = st.sidebar.slider(
 )
 stress_cost = st.sidebar.slider(
     "Crop stress (AED per mm of deficit)", 1.0, 120.0, 30.0, 1.0,
-    help="The asymmetry. Raising this favours methods that over-water.",
+    help="The asymmetry. Raising this penalises methods that err toward under-watering.",
 )
 st.sidebar.metric(
     "Stress-to-water ratio", f"{stress_cost / water_cost:.1f} to 1",
@@ -191,9 +192,10 @@ st.sidebar.metric(
 
 st.sidebar.header("Explanations")
 use_llm = st.sidebar.checkbox(
-    "Use a language model (Ollama)", value=False,
+    "Use a language model (Ollama)",
+    value=os.environ.get(ENGINE_ENV_VAR, "").lower() == "ollama",
     help=(
-        "Off by default. When on, every number the model writes is checked "
+        f"Off unless {ENGINE_ENV_VAR}=ollama. When on, every number the model writes is checked "
         "against the computed facts and the text is discarded if any figure "
         "was not supplied."
     ),
@@ -279,8 +281,10 @@ with decision_tab:
         )
 
         st.subheader("Why")
-        engine: ExplanationEngine | None = (
-            build_llm_explainer() if use_llm else None
+        # Explicit in both branches: an unticked box means offline even when
+        # the environment variable asks for Ollama.
+        engine: ExplanationEngine = (
+            build_llm_explainer() if use_llm else OfflineExplainer()
         )
         with st.spinner("Writing the explanation..."):
             explanation = explain_decision(
@@ -337,7 +341,10 @@ with comparison_tab:
     top[2].metric(
         "Same method?",
         "No" if cheapest != most_accurate else "Yes",
-        help="The project's central finding is that these usually differ.",
+        help=(
+            "Accuracy and cost need not agree. Inside this simulator the "
+            "physics balance is the true model, so it is usually both."
+        ),
     )
 
     if cheapest != most_accurate:
@@ -346,6 +353,15 @@ with comparison_tab:
             f"costs {costs[most_accurate] - costs[cheapest]:,.0f} AED more to "
             f"operate than **{names[cheapest]}**. Accuracy weights over- and "
             "under-estimation equally; a field does not.",
+            icon=":material/lightbulb:",
+        )
+    elif names[cheapest].startswith("Physics ("):
+        st.info(
+            f"**{names[cheapest]}** is both the most accurate and the cheapest. "
+            "It runs the simulator's own water balance on the same weather, so "
+            "its error is zero by construction: that is internal consistency, "
+            "not field accuracy. The other methods show how close each gets to "
+            "a perfect process model, and what the gap costs.",
             icon=":material/lightbulb:",
         )
 
@@ -383,9 +399,13 @@ with comparison_tab:
         st.pyplot(fig, use_container_width=True)
         plt.close(fig)
         caption(
-            "Points toward the bottom-left would be both accurate and cheap. "
-            "No method is in that corner, which is the trade-off this project "
-            "quantifies."
+            "Points toward the bottom-left are both accurate and cheap. "
+            + (
+                f"{names[cheapest]} is in that corner because inside the "
+                "simulator it shares the true model."
+                if cheapest == most_accurate
+                else "No method is in that corner at these settings."
+            )
         )
 
     st.subheader("Full results")
@@ -407,8 +427,10 @@ with comparison_tab:
         use_container_width=True, hide_index=True,
     )
     st.caption(
-        "Bias is the average signed error. A positive bias means the method "
-        "believes the soil is drier than it is, and therefore over-waters."
+        "Bias is the average signed error against the morning state. A "
+        "positive bias means the method believes the soil is drier than it "
+        "is and over-waters; a negative one means it believes the soil is "
+        "wetter and lets the crop stress."
     )
 
 

@@ -731,8 +731,7 @@ plt.tight_layout()
 plt.show()
 """),
     ("md", """\
-The scale is logarithmic because the spread is enormous. Trusting the sensor
-costs roughly **eight times** what the 1998 water balance costs.
+The scale is logarithmic because the spread is enormous. Trusting the sensor costs roughly **seven times** what the 1998 water balance costs.
 
 That is the single most commercially relevant number in this project, so it is
 worth being precise about the cause. The simulated probe carries the failure
@@ -743,7 +742,7 @@ moisture. It therefore reads **progressively wetter than reality**, so a
 controller that believes it waters progressively less. The crop starves while
 the dashboard shows green.
 
-Naive fusion inherits the same bias and barely improves on it.
+Fusing the probe into the water balance at a low gain helps, but inherits the bias: inside the simulator the balance is already exact, so the probe can only pull it toward the wrong answer.
 """),
     ("code", """\
 best_rmse = min(results, key=lambda r: r.depletion_rmse)
@@ -777,33 +776,24 @@ axes[1].set_xlim(min(x_values) - pad_x, max(x_values) + pad_x)
 axes[1].set_ylim(min(y_values) - pad_y, max(y_values) + pad_y)
 axes[1].set_xlabel("Prediction error (RMSE, mm)  - lower is more accurate")
 axes[1].set_ylabel("Operating cost (AED)  - lower is cheaper")
-axes[1].set_title("The four serious contenders, zoomed")
+axes[1].set_title(f"The {len(contenders)} serious contenders, zoomed")
 
-axes[1].annotate("Most accurate", (best_rmse.depletion_rmse, best_rmse.total_cost),
-                 xytext=(15, 42), textcoords="offset points", fontsize=11,
-                 fontweight="bold", ha="left",
-                 arrowprops=dict(arrowstyle="->", color="#4D4D4D"))
-axes[1].annotate("Cheapest to run", (best_cost.depletion_rmse, best_cost.total_cost),
-                 xytext=(-15, 40), textcoords="offset points", fontsize=11,
-                 fontweight="bold", ha="right",
-                 arrowprops=dict(arrowstyle="->", color="#4D4D4D"))
-
-# The three supervised models sit almost exactly on top of one another, so
-# they get one label between them rather than three overlapping ones. That is
-# also the more honest presentation: the point is that they are
-# indistinguishable, not that each deserves separate identification.
-supervised = [r for r in contenders if not r.predictor_name.startswith("Physics (")]
-physics = next(r for r in contenders if r.predictor_name.startswith("Physics ("))
-
-axes[1].annotate(f"{len(supervised)} machine learning models\\n(within 1% of each other)",
-                 (float(np.mean([r.depletion_rmse for r in supervised])),
-                  float(np.mean([r.total_cost for r in supervised]))),
-                 xytext=(0, -46), textcoords="offset points",
-                 ha="center", fontsize=9.5, color="#444444")
-axes[1].annotate(physics.predictor_name,
-                 (physics.depletion_rmse, physics.total_cost),
-                 xytext=(0, -22), textcoords="offset points",
-                 ha="center", fontsize=9.5, color="#444444")
+# One label when one method is both, two otherwise: two arrows at the same
+# point would read as two different findings.
+if best_rmse is best_cost:
+    axes[1].annotate("Most accurate and cheapest", (best_cost.depletion_rmse, best_cost.total_cost),
+                     xytext=(25, 40), textcoords="offset points", fontsize=11,
+                     fontweight="bold", ha="left",
+                     arrowprops=dict(arrowstyle="->", color="#4D4D4D"))
+else:
+    axes[1].annotate("Most accurate", (best_rmse.depletion_rmse, best_rmse.total_cost),
+                     xytext=(15, 42), textcoords="offset points", fontsize=11,
+                     fontweight="bold", ha="left",
+                     arrowprops=dict(arrowstyle="->", color="#4D4D4D"))
+    axes[1].annotate("Cheapest to run", (best_cost.depletion_rmse, best_cost.total_cost),
+                     xytext=(-15, 40), textcoords="offset points", fontsize=11,
+                     fontweight="bold", ha="right",
+                     arrowprops=dict(arrowstyle="->", color="#4D4D4D"))
 
 plt.tight_layout()
 plt.show()
@@ -812,29 +802,27 @@ print(f"Lowest prediction error : {best_rmse.predictor_name} "
       f"(RMSE {best_rmse.depletion_rmse:.2f} mm, cost {best_rmse.total_cost:,.0f} AED)")
 print(f"Lowest operating cost   : {best_cost.predictor_name} "
       f"(RMSE {best_cost.depletion_rmse:.2f} mm, cost {best_cost.total_cost:,.0f} AED)")
-print(f"Accuracy gap            : {best_cost.depletion_rmse - best_rmse.depletion_rmse:+.2f} mm")
-print(f"Cost gap                : {best_rmse.total_cost - best_cost.total_cost:+,.0f} AED")
+if best_rmse is best_cost:
+    # The same method on both counts, so the useful comparison is with the
+    # nearest rival rather than with itself.
+    runner_up = min((r for r in results if r is not best_cost), key=lambda r: r.depletion_rmse)
+    print(f"Closest other method    : {runner_up.predictor_name} "
+          f"(RMSE {runner_up.depletion_rmse:.2f} mm, "
+          f"{runner_up.total_cost - best_cost.total_cost:+,.0f} AED)")
+else:
+    print(f"Accuracy gap            : {best_cost.depletion_rmse - best_rmse.depletion_rmse:+.2f} mm")
+    print(f"Cost gap                : {best_rmse.total_cost - best_cost.total_cost:+,.0f} AED")
 """),
     ("md", """\
 ## The headline result
 
-**The most accurate model is not the cheapest to operate.**
+**Inside this simulator the physics balance is a perfect model, and nothing beats it.**
 
-The machine learning models predict root-zone depletion more accurately than
-the physics baseline does, and they still cost more to run. The reason is
-visible in the water column of the table above: they err systematically toward
-"drier than reality" and irrigate accordingly, applying a few hundred extra
-millimetres over the season, most of which drains straight past the roots.
+It runs the same water balance that generates the true state, on the same weather, so its error is zero by construction. That is internal consistency, not field accuracy: in a real field it would drift with every loss it does not model. What the chart measures is how close each other method gets to a perfect process model, and what the gap costs.
 
-Crucially this is **not one model getting unlucky**. Random forest, gradient
-boosting and XGBoost are three different learning algorithms - one that cannot
-extrapolate beyond its training range and two that can. All three land on the
-same side of the truth. Swapping the estimator does not fix it, because the
-estimator was never what was wrong: fitting to squared error produces a model
-optimized for a symmetric world, and this world is not symmetric.
+The best learned model gets within about 5% on cost. All three learned models err on the same side, though: each estimates the root zone as wetter than it is, so each lets it dry past the stress threshold on more days than the water balance does. RMSE reports how far off an estimate is, not which way, and under asymmetric cost the way is what gets charged.
 
-Reporting "we trained a model and reached 1.9 mm RMSE" would have been true,
-impressive-sounding, and would have cost the client money.
+Reporting "we trained a model and reached 0.9 mm RMSE" would have been true and impressive-sounding, and it would still have cost the client more than an equation from 1998.
 """),
     ("code", """\
 penalties = [2.5, 5.0, 15.0, 30.0, 60.0, 120.0]
@@ -856,7 +844,7 @@ ax.set_xscale("log")
 ax.set_yscale("log")
 ax.set_xlabel("Cost charged per mm of crop stress (AED)")
 ax.set_ylabel("Total operating cost (AED)")
-ax.set_title("Where the ranking flips")
+ax.set_title("Cost sensitivity")
 ax.legend(ncol=2, fontsize=9.5)
 
 # Two plain locals rather than an optional tuple. Subscripting a value that
@@ -889,17 +877,11 @@ for index, penalty in enumerate(penalties):
     ("md", """\
 ## When would machine learning be the right call?
 
-Only when crop stress is catastrophically expensive.
+Not anywhere in this sweep. The water balance wins at every cost ratio tested, from stress priced at parity with water to 48 times dearer, and the learned models fall further behind as stress gets more expensive, because their error points toward under-watering.
 
-At every ordinary cost ratio the 1998 water balance wins - with no training
-data, no sensor, and no inference cost. Machine learning takes over only at the
-far end, where stress is so ruinous that the models' systematic over-watering
-becomes cheap insurance.
+Where machine learning could earn its place is where the process model is wrong: an unmeasured loss, a mis-specified soil, a crop coefficient that does not hold. This simulator cannot represent that, because its truth is the model. It is the first thing a field trial should test.
 
-**That is a real answer, and a defensible recommendation.** It is also one a
-client is unlikely to hear from a vendor selling models. The right response to
-"should we use AI for this?" is sometimes no - and being able to show exactly
-where the answer would change is more valuable than either a yes or a no.
+**That is a real answer, and a defensible recommendation.** It is also one a client is unlikely to hear from a vendor selling models. The right response to "should we use AI for this?" is sometimes "not yet, and here is the experiment that would change my mind".
 """),
     ("code", """\
 from irrigation.decision.policy import decide
@@ -932,14 +914,14 @@ by prompt wording.
 
 ## Summary
 
-| Question                               | Answer                                                            |
-|----------------------------------------|-------------------------------------------------------------------|
-| Which method is cheapest to run?       | The FAO-56 water balance, at every ordinary cost ratio            |
-| Does machine learning predict better?  | Yes - and it still costs more                                     |
-| Why?                                   | It errs toward "too dry", over-waters, and the excess drains away |
-| Is that one bad model?                 | No - three different algorithms all do it                         |
-| Should the client trust a bare sensor? | No - drift makes it roughly 8x more expensive                     |
-| When would ML be right?                | Only where crop stress is catastrophically costly                 |
+| Question                               | Answer                                                               |
+|----------------------------------------|----------------------------------------------------------------------|
+| Which method is cheapest to run?       | The FAO-56 water balance, at every cost ratio tested                 |
+| Why is it unbeatable here?             | It is the simulator's own model - consistency, not field accuracy    |
+| How close does machine learning get?   | The best learned model is within about 5% on cost                    |
+| Which way do the learned models err?   | All three read the soil as too wet, so the crop stresses more often  |
+| Should the client trust a bare sensor? | No - drift makes it roughly 7x more expensive                        |
+| When would ML be right?                | Where the process model is wrong - which only a field trial can show |
 """),
 ]
 

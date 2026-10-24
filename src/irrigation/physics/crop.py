@@ -39,18 +39,22 @@ class Crop:
             "late": self.kc_end,
         }[stage]
 
-    def adjusted_depletion_fraction(self, et0_mm_day: float) -> float:
+    def adjusted_depletion_fraction(self, etc_mm_day: float) -> float:
         """
-        Eq. 83 - p adjusted for evaporative demand.
+        p adjusted for evaporative demand - FAO-56 Table 22, footnote 2.
 
-        Tabulated p assumes ET0 ~ 5 mm/day. Dubai summer runs 8-10 mm/day, at
-        which the crop stresses at a *lower* depletion than the table implies:
-        water moves to the leaf slower than the atmosphere pulls it away.
-        Using the unadjusted table value in a Gulf summer is a common and
-        expensive mistake - it schedules irrigation later than the plant can
-        tolerate.
+        Tabulated p assumes crop ET of ~5 mm/day. In a Dubai summer ETc runs
+        well above that, and the crop stresses at a *lower* depletion than the
+        table implies: water moves to the leaf slower than the atmosphere
+        pulls it away. Using the unadjusted table value in a Gulf summer is a
+        common and expensive mistake - it schedules irrigation later than the
+        plant can tolerate.
+
+        The argument is unstressed crop ET (ET0 x Kc), as FAO specifies, not
+        ET0 - the two differ by Kc, which reverses the error's direction
+        either side of Kc = 1. Eq. 83 is the RAW = p x TAW that uses this p.
         """
-        p = self.depletion_fraction + 0.04 * (5.0 - et0_mm_day)
+        p = self.depletion_fraction + 0.04 * (5.0 - etc_mm_day)
         return max(0.1, min(0.8, p))
 
 

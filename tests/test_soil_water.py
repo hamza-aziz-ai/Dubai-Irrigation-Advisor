@@ -22,7 +22,7 @@ class TestAvailableWater:
 
 class TestDepletionFractionAdjustment:
     def test_high_demand_lowers_the_stress_threshold(self):
-        """FAO-56 Eq. 83. Dubai summer ET0 is 8-10 mm/day, not the tabulated 5."""
+        """FAO-56 Table 22 note 2. Dubai summer ETc is well above the tabulated 5."""
         p_mild = TURF.adjusted_depletion_fraction(5.0)
         p_summer = TURF.adjusted_depletion_fraction(9.0)
         assert p_mild == pytest.approx(TURF.depletion_fraction)
@@ -31,6 +31,14 @@ class TestDepletionFractionAdjustment:
     def test_clamped_to_physical_range(self):
         assert 0.1 <= TURF.adjusted_depletion_fraction(30.0) <= 0.8
         assert 0.1 <= TURF.adjusted_depletion_fraction(0.1) <= 0.8
+
+    @pytest.mark.parametrize("kc", [0.6, 1.15])
+    def test_balance_adjusts_p_by_crop_et_not_reference_et(self, kc):
+        """FAO adjusts p with ETc. Using ET0 errs one way below Kc = 1 and the
+        other way above it, so both sides are pinned."""
+        s = step(0.0, et0_mm=9.0, crop=TURF, soil=SANDY, root_depth_m=0.5, kc=kc)
+        p = TURF.adjusted_depletion_fraction(9.0 * kc)
+        assert s.raw_mm == pytest.approx(SANDY.readily_available_water_mm(0.5, p))
 
 
 class TestStressCoefficient:

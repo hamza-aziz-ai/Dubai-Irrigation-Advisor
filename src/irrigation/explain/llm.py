@@ -1,7 +1,7 @@
 """
 Ollama-backed explanation engine, with the grounding guarantee enforced.
 
-CLAUDE.md invariant 3 says the language model never computes a number. Every
+The project's rule is that the language model never computes a number. Every
 LLM project claims something like that; almost none of them check it. A prompt
 saying "do not calculate" is a request, and a request is not a guarantee - the
 failure mode is not the model refusing, it is the model quietly producing
@@ -89,10 +89,6 @@ def normalize(text: str) -> str:
     # character could fuse two numbers into one that verifies against neither.
     text = "".join(char if ord(char) < 128 else " " for char in text)
     return " ".join(text.split())
-
-
-class GroundingError(Exception):
-    """Raised when generated text contains a number that was not supplied."""
 
 
 @dataclass(frozen=True)
@@ -265,7 +261,8 @@ class OllamaExplainer:
         try:
             import ollama
 
-            names = {m.model for m in ollama.list().models}
+            with ollama.Client(timeout=self.timeout_s) as client:
+                names = {m.model for m in client.list().models}
             return self.model in names
         except Exception:
             return False
@@ -273,14 +270,17 @@ class OllamaExplainer:
     def _generate(self, context: dict[str, Any], facts: list[NumericFact]) -> str:
         import ollama
 
-        response = ollama.chat(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": build_prompt(context, facts)},
-            ],
-            options={"temperature": self.temperature},
-        )
+        # `timeout_s` bounds each HTTP operation (connect, read), not the
+        # whole generation: a model that keeps streaming is not cut off.
+        with ollama.Client(timeout=self.timeout_s) as client:
+            response = client.chat(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": build_prompt(context, facts)},
+                ],
+                options={"temperature": self.temperature},
+            )
         # gpt-oss models expose chain-of-thought in a separate `thinking`
         # field. Only `content` is used: reasoning text is unverified by
         # construction and must never reach the grounds' manager.

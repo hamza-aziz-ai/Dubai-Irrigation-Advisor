@@ -81,8 +81,8 @@ class SplitYears:
     autocorrelation is measured in weeks, that leaks the answer almost
     perfectly and produces a model that looks superb and forecasts nothing.
 
-    This mirrors CLAUDE.md invariant 5 - the simulator keeps TRAIN_SEEDS and
-    EVAL_WEATHER_SEED disjoint for the same reason.
+    This mirrors the simulator, which keeps TRAIN_SEEDS and EVAL_WEATHER_SEED
+    disjoint for the same reason.
     """
 
     train_end: int = 2016

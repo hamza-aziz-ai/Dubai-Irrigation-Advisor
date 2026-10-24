@@ -8,7 +8,7 @@ on a 1998 equation.
 
 ```bash
 pipenv install --dev
-pipenv run pytest -q                            # 129 tests
+pipenv run pytest -q
 pipenv run python scripts/demo.py               # narrated end-to-end
 pipenv run streamlit run app/dashboard.py       # interactive dashboard
 ```
@@ -24,52 +24,45 @@ hardware.
 
 ## The finding
 
-Six ways to decide when to irrigate, run over the same simulated 120-day Dubai
-summer, scored on operating cost rather than prediction error:
+Six ways to decide when to irrigate, run over the same simulated 120-day Dubai summer, scored on operating cost rather than prediction error:
 
 | Predictor                    | Cost (AED) | Water (mm) | Stress days | Drainage (mm) | RMSE (mm) | Bias (mm) |
 |------------------------------|------------|------------|-------------|---------------|-----------|-----------|
-| **Physics (FAO-56 balance)** | **2,645**  | 926        | 5           | 9             | 2.49      | −1.47     |
-| Sensor only                  | 20,062     | 865        | 99          | 1             | 12.28     | −10.27    |
-| Physics + sensor fusion      | 16,533     | 900        | 97          | 4             | 9.96      | −9.25     |
-| Random forest                | 3,055      | 1,150      | 0           | 209           | 1.89      | +1.68     |
-| Gradient boosting            | 3,064      | 1,154      | 0           | 212           | 1.93      | +1.70     |
-| XGBoost                      | 3,036      | 1,143      | 0           | 202           | **1.88**  | +1.65     |
+| **Physics (FAO-56 balance)** | **2,550**  | 918        | 5           | 0             | **0.00**  | 0.00      |
+| Sensor only                  | 17,023     | 872        | 94          | 1             | 10.83     | −10.18    |
+| Physics + sensor fusion      | 13,400     | 887        | 89          | 0             | 9.34      | −8.91     |
+| Random forest                | 5,977      | 910        | 36          | 1             | 5.74      | −5.31     |
+| Gradient boosting            | 2,677      | 934        | 9           | 14            | 0.91      | −0.43     |
+| XGBoost                      | 2,824      | 920        | 11          | 2             | 1.42      | −1.28     |
 
-**The most accurate model is not the cheapest to run.** XGBoost predicts
-root-zone depletion more accurately than the physics baseline and still costs
-391 AED more per season, because it errs systematically toward "drier than
-reality" and irrigates accordingly — over 200 mm of extra water, almost all of
-which drains past the root zone.
+RMSE and bias compare each morning's estimate with the true morning state.
 
-And this is not one model getting unlucky. Random forest cannot extrapolate
-beyond its training range; the two boosters can. All three land on the same
-side of the truth, all three over-water, all three lose to the water balance.
-Swapping the estimator does not fix it, because the estimator was never what
-was wrong: fitting to squared error produces a model tuned for a symmetric
-world, and irrigation is not symmetric.
+**Inside this simulator the physics baseline is a perfect model, and nothing beats it.** The water balance that estimates depletion is the same balance that generates the true state, fed the same weather, so its error is zero by construction. That is internal consistency, not field accuracy: in a real field it would drift with every loss it does not model. What the comparison measures is how close each other method gets to a perfect process model, and what the gap costs.
 
-RMSE weights over- and under-estimation equally. A field does not.
+**The best learned model gets within 5%.** Gradient boosting tracks depletion to 0.91 mm and costs 127 AED more per season. XGBoost, at 1.42 mm, costs 274 AED more; random forest, which cannot extrapolate beyond its training range, costs more than twice as much.
 
-### Where the ranking flips
+**All three learned models err on the wet side.** Each estimates the root zone as wetter than it is, so each lets it dry past RAW on more days than the water balance does: 9, 11 and 36 stress days against 5. Under asymmetric cost that is the expensive direction. RMSE reports how far off a model is, not which way, and the field charges for the way.
 
-| Stress penalty (AED/mm) | Ratio | Physics   | Sensor | Fusion | RF    | GBM   | XGB       | Winner  |
-|-------------------------|-------|-----------|--------|--------|-------|-------|-----------|---------|
-| 2.5                     | 1×    | **2,499** | 3,773  | 3,593  | 3,055 | 3,064 | 3,036     | Physics |
-| 5.0                     | 2×    | **2,512** | 5,254  | 4,770  | 3,055 | 3,064 | 3,036     | Physics |
-| 15.0                    | 6×    | **2,565** | 11,177 | 9,475  | 3,055 | 3,064 | 3,036     | Physics |
-| 30.0                    | 12×   | **2,645** | 20,062 | 16,533 | 3,055 | 3,064 | 3,036     | Physics |
-| 60.0                    | 24×   | **2,804** | 37,832 | 30,649 | 3,055 | 3,064 | 3,036     | Physics |
-| 120.0                   | 48×   | 3,123     | 73,372 | 58,881 | 3,055 | 3,064 | **3,036** | XGBoost |
+**Trusting the probe is the costliest mistake.** The simulated sensor reads wet - a calibration offset plus salinity drift - so a controller that believes it starves the crop for most of the season. Fusing it into the water balance at a low gain helps, but here it can only pull an exact estimate toward a biased one.
 
-Machine learning earns its place only where crop stress is catastrophically
-expensive and its systematic over-watering becomes cheap insurance. At every
-ordinary cost ratio a 1998 water balance wins — with no training data, no
-sensor, and no inference cost.
+### Cost sensitivity
 
-That is the answer a client should get. Reporting "we built an LSTM and reached
-1.88 mm RMSE" would have been true, impressive-sounding, and would have cost
-them money.
+| Stress penalty (AED/mm) | Ratio | Physics   | Sensor | Fusion | RF     | GBM   | XGB   | Winner  |
+|-------------------------|-------|-----------|--------|--------|--------|-------|-------|---------|
+| 2.5                     | 1×    | **2,447** | 3,524  | 3,277  | 2,713  | 2,494 | 2,475 | Physics |
+| 5.0                     | 2×    | **2,457** | 4,751  | 4,197  | 3,010  | 2,510 | 2,507 | Physics |
+| 15.0                    | 6×    | **2,494** | 9,660  | 7,878  | 4,197  | 2,577 | 2,634 | Physics |
+| 30.0                    | 12×   | **2,550** | 17,023 | 13,400 | 5,977  | 2,677 | 2,824 | Physics |
+| 60.0                    | 24×   | **2,662** | 31,750 | 24,444 | 9,537  | 2,878 | 3,205 | Physics |
+| 120.0                   | 48×   | **2,887** | 61,203 | 46,530 | 16,658 | 3,279 | 3,965 | Physics |
+
+The water balance wins at every ratio swept, and the learned models fall further behind as stress gets dearer, because their error points toward under-watering. At parity the boosters are within 2% of physics; at 48× the best of them is 14% behind.
+
+That is the answer a client should get: with good weather data and a calibrated crop and soil model, a 1998 water balance needs no training data, no sensor and no inference, and the learned models only approach it. Where they could earn their place is where that model is wrong - an unmeasured loss, a mis-specified soil - which this simulator cannot represent, and which is the first thing a field trial should test.
+
+### A correction
+
+An earlier version of this table reported XGBoost as the most accurate model yet 391 AED dearer than physics, with the learned models over-watering by about 200 mm. Those figures came from three bugs, fixed together: RMSE was scored against the end-of-day state rather than the morning state each estimate describes; the physics predictor paired yesterday's water with today's ET, putting it a day ahead of the state it estimated; and the depletion fraction was adjusted by reference ET0 instead of crop ETc, as FAO-56 specifies. The over-watering disappeared with the loss function unchanged, so it was not the squared-error objective's doing, as this README used to argue. Regression tests now pin the timing contract.
 
 ---
 

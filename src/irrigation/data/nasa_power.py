@@ -34,8 +34,9 @@ plainly rather than burying:
 Point 2 deserves emphasis because it is the reason this module exists. The
 sequence models in `notebooks/` need a soil-moisture target that was not
 produced by this project's own simulator - otherwise they learn my water
-balance and the evaluation proves nothing (see CLAUDE.md invariant 4 for the
-same principle applied to predictors). GWETROOT is independent of anything
+balance and the evaluation proves nothing (the same principle that keeps
+depletion predictors limited to an `Observation`, never the true state).
+GWETROOT is independent of anything
 here: different physics, different authors, different inputs. It is a weaker
 target than a calibrated in-situ probe would be, and a stronger one than
 self-generated data can ever be.

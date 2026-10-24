@@ -18,7 +18,7 @@ Choices worth noting:
   temperature range (Eq. 50) — is a significant source of uncertainty. Hiding
   that choice inside the ET0 function would conceal it.
 - **`G = 0` at a daily step** (Eq. 42), but `0.14 (Tmonth − Tmonth−1)` at a
-  monthly step (Eq. 43). Soil heat flux is not negligible over a month.
+  monthly step (Eq. 44). Soil heat flux is not negligible over a month.
 - **Wind measured at 10 m is converted with Eq. 47.** See the README for why
   this matters more than it looks.
 - **The cloudiness ratio `Rs/Rso` is clamped at 1.0.** On a very clear day
@@ -40,20 +40,15 @@ protected agriculture rather than field crops:
 
 ### The depletion fraction adjustment matters more here than elsewhere
 
-Tabulated `p` values (Table 22) assume ET0 near **5 mm/day**. Dubai summer runs
-**8–9 mm/day**. FAO-56 Eq. 83 corrects for this:
+Tabulated `p` values (Table 22) assume crop evapotranspiration near **5 mm/day**. Dubai summer ET0 runs **8–9 mm/day**, and the note to Table 22 corrects for this using crop ET, not reference ET:
 
 ```
-p_adjusted = p_table + 0.04 (5 − ET0)
+p_adjusted = p_table + 0.04 (5 − ETc),   ETc = Kc × ET0,   clamped to 0.1–0.8
 ```
 
-At ET0 = 8.5 this drops turfgrass `p` from 0.50 to 0.36 — RAW falls from
-17.5 mm to 12.7 mm on sand at 0.5 m rooting depth. **The crop stresses at a
-lower depletion than the table implies**, because water moves to the root
-surface more slowly than the atmosphere removes it from the leaf.
+For turfgrass (Kc 0.85) at ET0 = 8.5, ETc is 7.2 mm/day and `p` drops from 0.50 to 0.41. RAW falls from 17.5 mm to 14.4 mm on sand at 0.5 m rooting depth. **The crop stresses at a lower depletion than the table implies**, because water moves to the root surface more slowly than the atmosphere removes it from the leaf. The adjusted `p` then feeds RAW = p × TAW, which is Eq. 83.
 
-Using the unadjusted table value in a Gulf summer schedules irrigation roughly
-a third of a RAW too late. It is a common and expensive mistake.
+Using the unadjusted table value in a Gulf summer schedules irrigation about a fifth of a RAW too late. It is a common and expensive mistake. Substituting ET0 for ETc is a subtler one: it over-corrects for crops with Kc below 1 and under-corrects above it.
 
 ## Soil water
 
@@ -65,8 +60,7 @@ FAO-56 Table 19. Sand dominates UAE soils and is the hard case:
 | Sandy loam | 0.21           | 0.10          | 110 mm/m | 55 mm        |
 
 35 mm of total available water against 8.5 mm/day of demand is roughly **four
-days of buffer at full profile** — and the usable fraction is RAW, about
-12.7 mm, or a day and a half. This is why the decision has so little margin,
+days of buffer at full profile** — and the usable fraction is RAW, about 14.4 mm, or two days at turfgrass crop ET. This is why the decision has so little margin,
 why irrigation must be light and frequent, and why a large application drains
 rather than being stored.
 

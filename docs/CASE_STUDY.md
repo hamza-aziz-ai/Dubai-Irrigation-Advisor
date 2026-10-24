@@ -120,38 +120,24 @@ that as moisture.
 
 | Predictor            | Cost (AED) | Water (mm) | Stress days | Drainage (mm) | RMSE (mm) |
 |----------------------|------------|------------|-------------|---------------|-----------|
-| **Physics (FAO-56)** | **2,645**  | 926        | 5           | 9             | 2.49      |
-| Sensor only          | 20,062     | 865        | 99          | 1             | 12.28     |
-| Physics + fusion     | 16,533     | 900        | 97          | 4             | 9.96      |
-| Random forest        | 3,055      | 1,150      | 0           | 209           | 1.89      |
-| Gradient boosting    | 3,064      | 1,154      | 0           | 212           | 1.93      |
-| XGBoost              | 3,036      | 1,143      | 0           | 202           | **1.88**  |
+| **Physics (FAO-56)** | **2,550**  | 918        | 5           | 0             | **0.00**  |
+| Sensor only          | 17,023     | 872        | 94          | 1             | 10.83     |
+| Physics + fusion     | 13,400     | 887        | 89          | 0             | 9.34      |
+| Random forest        | 5,977      | 910        | 36          | 1             | 5.74      |
+| Gradient boosting    | 2,677      | 934        | 9           | 14            | 0.91      |
+| XGBoost              | 2,824      | 920        | 11          | 2             | 1.42      |
 
-Four results worth stating plainly.
+RMSE compares each morning's estimate with the true morning state. Four results worth stating plainly.
 
-**Trusting the probe costs 7.6× the physics baseline.** Drift makes it read
-progressively wetter than reality, so the controller starves the crop — 99
-stress days out of 120. Naive fusion inherits the bias and barely improves on
-it. This is what a large amount of commercial "smart irrigation" actually does.
+**The physics baseline is the simulator's own model, so it is exact here.** It runs the same water balance on the same weather that generates the truth, and its error is zero by construction. That is internal consistency, not field accuracy. The comparison measures how close everything else gets to a perfect process model, and what the gap costs.
 
-**The best RMSE does not win on cost.** XGBoost predicts depletion more
-accurately than the physics baseline and still costs 391 AED more to run. It
-errs toward "drier than reality" and irrigates accordingly: 217 mm of extra
-water, 194 mm of it draining past the root zone.
+**Trusting the probe costs 6.7× the physics baseline.** Drift makes it read progressively wetter than reality, so the controller starves the crop: 94 stress days out of 120. Fusion at a low gain helps but inherits the bias, because in here it can only pull an exact estimate toward a biased one. This is what a large amount of commercial "smart irrigation" actually does.
 
-**It is not one model getting unlucky.** Random forest cannot extrapolate
-beyond its training range; the two boosters can. All three still land on the
-same side of the truth, over-water by the same margin, and lose to the water
-balance by the same amount — they finish within 1% of each other on cost.
-Changing the estimator does not help, because the estimator was never the
-problem: a squared-error objective produces a model tuned for a symmetric
-world, and irrigation is not symmetric. That makes the finding a statement
-about the loss function rather than about a library.
+**The best learned model gets within 5%, and all three err the same way.** Gradient boosting tracks depletion to 0.91 mm and costs 127 AED more per season; XGBoost (1.42 mm) costs 274 AED more; random forest costs more than twice as much. All three estimate the root zone as wetter than it is, so all three let it dry past RAW on more days than the water balance. RMSE reports how far off a model is, not which way, and the asymmetric cost charges for the way.
 
-**The crossover is at roughly a 48:1 stress-to-water cost ratio.** Below that,
-physics wins — with no training data, no sensor, no inference. Above it, ML's
-systematic over-watering becomes cheap insurance and it wins. Both halves of
-that sentence are needed for the recommendation to be honest.
+**There is no crossover in the range tested.** Physics wins at every stress-to-water ratio from 1:1 to 48:1, and the learned models fall further behind as stress gets dearer, because their error points toward under-watering. The recommendation follows: with good weather data and a calibrated crop and soil model, the water balance needs no training data, no sensor and no inference. Where ML could earn its place is where that model is wrong, which this simulator cannot represent and a field trial should test first.
+
+**A correction.** An earlier version of this section reported XGBoost as the most accurate model yet 391 AED dearer, over-watering by about 200 mm, and blamed the squared-error objective. Those figures came from three bugs: RMSE scored against the end-of-day state instead of the morning state, a physics predictor stepping a day ahead of the state it estimated, and a depletion fraction adjusted by ET0 instead of ETc. With them fixed and the loss function unchanged, the over-watering disappeared, so the earlier attribution to the loss function did not hold.
 
 ---
 
