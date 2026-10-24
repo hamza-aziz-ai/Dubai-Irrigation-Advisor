@@ -33,12 +33,12 @@ KNOWLEDGE: dict[str, dict[str, str]] = {
     },
     "high_demand_adjustment": {
         "text": (
-            "Tabulated depletion fractions assume ET0 near 5 mm/day. Where "
-            "evaporative demand is higher the fraction must be reduced, because "
-            "water moves to the root surface more slowly than the atmosphere "
-            "removes it from the leaf."
+            "Tabulated depletion fractions assume crop evapotranspiration near "
+            "5 mm/day. Where evaporative demand is higher the fraction must be "
+            "reduced, because water moves to the root surface more slowly than "
+            "the atmosphere removes it from the leaf."
         ),
-        "source": "FAO-56 Ch. 8, Eq. 83",
+        "source": "FAO-56 Ch. 8, Table 22 note 2",
     },
     "sandy_soil": {
         "text": (
@@ -142,8 +142,16 @@ class OfflineExplainer:
 
 
 def build_explainer() -> ExplanationEngine:
-    """Resolve an explanation engine. Offline is the default and the fallback."""
-    return OfflineExplainer()
+    """
+    Resolve the engine named by `IRRIGATION_EXPLAIN_ENGINE`.
+
+    Offline unless that variable asks for Ollama, and offline is always the
+    fallback. Imported here rather than at module level because `llm` imports
+    this module.
+    """
+    from .llm import explainer_from_environment
+
+    return explainer_from_environment()
 
 
 def explain_decision(

@@ -75,20 +75,23 @@ def main() -> int:
     results = run_comparison(crop, soil, root_depth_m=root, kc=kc)
     print(render_table(results))
 
-    # Found by score, never by name. Three supervised models sit within ~1% of
-    # each other, so which one is most accurate changes with a library version
-    # - and a hardcoded name silently prints the wrong number when it does.
-    best_rmse = min(results, key=lambda r: r.depletion_rmse)
+    # Found by score, never by name. Which learned model comes closest depends
+    # on one seeded training set, and a hardcoded name silently prints the
+    # wrong number when that changes.
     phys = next(r for r in results if r.predictor_name.startswith("Physics ("))
-    print(f"\n  {best_rmse.predictor_name} has the LOWEST prediction error "
-          f"({best_rmse.depletion_rmse:.2f} vs {phys.depletion_rmse:.2f} mm RMSE)")
-    print(f"  and the HIGHER operating cost "
-          f"({best_rmse.total_cost:,.0f} vs {phys.total_cost:,.0f} AED).")
-    print(f"  It over-applies {best_rmse.water_applied_mm - phys.water_applied_mm:,.0f} mm of water, "
-          f"{best_rmse.drainage_mm - phys.drainage_mm:,.0f} mm of which drains away.")
-    print("  RMSE weights over- and under-estimation equally. The field does not.")
+    closest = min((r for r in results if r is not phys), key=lambda r: r.depletion_rmse)
+    side = "wetter" if closest.depletion_bias < 0 else "drier"
+    print(f"\n  The physics balance is the simulator's own model, so its error here is "
+          f"{phys.depletion_rmse:.2f} mm:")
+    print("  internal consistency, not field accuracy.")
+    print(f"  The closest other method, {closest.predictor_name}, is "
+          f"{closest.depletion_rmse:.2f} mm off and costs "
+          f"{closest.total_cost - phys.total_cost:,.0f} AED more per season.")
+    print(f"  It reads the soil as {side} than it is ({closest.depletion_bias:+.2f} mm bias), "
+          f"with {closest.stress_days} stress days against {phys.stress_days}.")
+    print("  RMSE says how far off an estimate is, not which way. The field charges for the way.")
 
-    banner("5 · WHERE THE RANKING FLIPS")
+    banner("5 · COST SENSITIVITY")
     # Columns are derived from the results, so adding a predictor cannot leave
     # the header describing a different table from the one printed below it.
     # Blind truncation produced "Physics + se" and "Gradient boo", so the
@@ -106,17 +109,23 @@ def main() -> int:
     ]
     print(f"  {'stress AED/mm':>14} {'ratio':>7}   " +
           "".join(f"{n:>13}" for n in short_names) + "   winner")
+    winners: list[str] = []
     for stress in (2.5, 15.0, 30.0, 60.0, 120.0):
         cm = CostModel(stress_cost_per_mm_deficit=stress)
         rs_ = run_comparison(crop, soil, root_depth_m=root, kc=kc, cost_model=cm)
         costs = [r.total_cost for r in rs_]
         winner_name = rs_[costs.index(min(costs))].predictor_name
+        winners.append(winner_name)
         win = abbreviations.get(winner_name, winner_name)
         print(f"  {stress:>14.1f} {stress / cm.water_cost_per_mm:>6.0f}x   " +
               "".join(f"{c:>13,.0f}" for c in costs) + f"   {win}")
-    print("\n  Machine learning earns its place only where stress is catastrophically")
-    print("  expensive and its systematic over-watering becomes cheap insurance.")
-    print("  At every ordinary cost ratio, a 1998 water balance wins - for free.\n")
+    if all(w == phys.predictor_name for w in winners):
+        print("\n  The water balance wins at every ratio tested, and needs no training")
+        print("  data, no sensor and no inference. Learned models could earn their place")
+        print("  only where the process model is wrong - which a field trial must test.\n")
+    else:
+        print("\n  The winner changes with the cost of stress: the ratio is a policy")
+        print("  choice, and the recommendation depends on it.\n")
     return 0
 
 

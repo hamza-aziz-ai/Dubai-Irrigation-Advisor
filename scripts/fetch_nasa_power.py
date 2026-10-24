@@ -13,8 +13,11 @@ download timestamp and the POWER API version.
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
-from irrigation.data import nasa_power
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from irrigation.data import nasa_power  # noqa: E402
 
 
 def main() -> int:

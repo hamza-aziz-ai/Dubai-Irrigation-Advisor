@@ -27,7 +27,8 @@ class DayRecord:
     day_index: int
     day_of_year: int
     et0_mm: float
-    true_depletion_mm: float
+    morning_depletion_mm: float      # true state the prediction is an estimate of
+    true_depletion_mm: float         # true state after today's water and ET
     predicted_depletion_mm: float
     applied_mm: float
     action: str
@@ -69,14 +70,17 @@ class SeasonResult:
         return sum(1 for r in self.records if r.applied_mm > 0)
 
     # ---- prediction-quality metrics (diagnostic only) ----
+    # Scored against the morning state, the same instant the prediction and
+    # the training labels refer to. The post-step state includes today's
+    # decision and ET, which no morning estimate can know.
     @property
     def depletion_rmse(self) -> float:
-        e = [r.predicted_depletion_mm - r.true_depletion_mm for r in self.records]
+        e = [r.predicted_depletion_mm - r.morning_depletion_mm for r in self.records]
         return float(np.sqrt(np.mean(np.square(e)))) if e else 0.0
 
     @property
     def depletion_bias(self) -> float:
-        e = [r.predicted_depletion_mm - r.true_depletion_mm for r in self.records]
+        e = [r.predicted_depletion_mm - r.morning_depletion_mm for r in self.records]
         return float(np.mean(e)) if e else 0.0
 
     def summary(self) -> dict[str, Any]:
@@ -197,6 +201,7 @@ def simulate_season(
 
         result.records.append(DayRecord(
             day_index=i, day_of_year=w.day_of_year, et0_mm=et0[i],
+            morning_depletion_mm=true_depletion,
             true_depletion_mm=state.depletion_mm,
             predicted_depletion_mm=predicted,
             applied_mm=decision.depth_mm, action=decision.action,

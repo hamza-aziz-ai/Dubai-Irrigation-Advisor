@@ -86,7 +86,7 @@ class TestExample17Bangkok:
         assert rnl == pytest.approx(3.11, abs=ABS_1DP)
 
     def test_soil_heat_flux_not_ignored_for_monthly_step(self):
-        """G is negligible daily but not monthly - FAO Eq. 43."""
+        """G is negligible daily but not monthly - FAO Eq. 44."""
         assert soil_heat_flux_monthly(30.2, 29.2) == pytest.approx(0.14, abs=1e-3)
 
     def test_eto(self):

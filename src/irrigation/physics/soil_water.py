@@ -85,7 +85,8 @@ def step(
     because irrigation applied in the morning is available to the crop that
     same day. Reversing it biases the model toward over-irrigating.
     """
-    p = crop.adjusted_depletion_fraction(et0_mm)
+    etc_potential = et0_mm * kc
+    p = crop.adjusted_depletion_fraction(etc_potential)
     taw = soil.total_available_water_mm(root_depth_m)
     raw = soil.readily_available_water_mm(root_depth_m, p)
 
@@ -115,7 +116,6 @@ def step(
     after_input = max(0.0, after_input)
 
     ks = water_stress_coefficient(after_input, taw, raw)
-    etc_potential = et0_mm * kc
     etc_actual = etc_potential * ks
 
     new_depletion = min(after_input + etc_actual, taw)

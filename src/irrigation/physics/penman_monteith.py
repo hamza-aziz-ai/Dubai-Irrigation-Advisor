@@ -178,7 +178,8 @@ def net_longwave_radiation(
 
 def soil_heat_flux_monthly(t_month_c: float, t_prev_month_c: float) -> float:
     """
-    Eq. 43 - G for monthly periods [MJ m-2 day-1].
+    Eq. 44 - G for monthly periods [MJ m-2 day-1], when the next month's
+    temperature is unknown (Eq. 43 is the variant that uses it).
 
     Negligible for daily steps (Eq. 42, G = 0) but not for monthly, where the
     soil is warming or cooling across the period.

@@ -102,11 +102,12 @@ def decide(
     Tomorrow's ET0 is included so a hot day is anticipated rather than
     reacted to. This is the one place forecast data changes the decision.
     """
-    p = crop.adjusted_depletion_fraction(et0_forecast_mm)
+    etc_forecast = et0_forecast_mm * kc
+    p = crop.adjusted_depletion_fraction(etc_forecast)
     taw = soil.total_available_water_mm(root_depth_m)
     raw = soil.readily_available_water_mm(root_depth_m, p)
 
-    projected = predicted_depletion_mm + et0_forecast_mm * kc
+    projected = predicted_depletion_mm + etc_forecast
     threshold = raw * trigger_fraction
 
     if projected < threshold:

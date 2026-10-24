@@ -65,28 +65,39 @@ class PhysicsBalance(DepletionPredictor):
     model has to beat this to justify its existence.
 
     Its weakness is real: errors accumulate. Nothing corrects the running
-    estimate, so an unmodelled loss drifts the balance over a season.
+    estimate, so an unmodelled loss drifts the balance over a season. Inside
+    the simulator there is no unmodelled loss - this predictor runs the same
+    balance on the same weather - so there it tracks the truth exactly, and
+    that is a statement about the simulator, not about a field.
+
+    The estimate is for *this morning*: yesterday's balance, closed with
+    yesterday's ET and yesterday's water. Pairing yesterday's water with
+    today's ET0, or stepping on the first morning before any day has passed,
+    would put the estimate a day ahead of the state it claims to describe.
     """
 
     name = "Physics (FAO-56 balance)"
 
     def __init__(self, crop: Crop, soil: Soil) -> None:
         self.crop, self.soil = crop, soil
-        self._depletion = 0.0
+        self.reset()
 
     def reset(self) -> None:
         self._depletion = 0.0
+        self._previous: Observation | None = None
 
     def predict(self, obs: Observation) -> float:
-        state = soil_water.step(
-            depletion_mm=self._depletion,
-            et0_mm=obs.et0_today_mm,
-            crop=self.crop, soil=self.soil,
-            root_depth_m=obs.root_depth_m, kc=obs.kc,
-            irrigation_mm=obs.irrigation_yesterday_mm,
-            rainfall_mm=obs.rainfall_yesterday_mm,
-        )
-        self._depletion = state.depletion_mm
+        previous, self._previous = self._previous, obs
+        if previous is not None:
+            state = soil_water.step(
+                depletion_mm=self._depletion,
+                et0_mm=previous.et0_today_mm,
+                crop=self.crop, soil=self.soil,
+                root_depth_m=previous.root_depth_m, kc=previous.kc,
+                irrigation_mm=obs.irrigation_yesterday_mm,
+                rainfall_mm=obs.rainfall_yesterday_mm,
+            )
+            self._depletion = state.depletion_mm
         return self._depletion
 
 
@@ -116,7 +127,7 @@ class SensorDirect(DepletionPredictor):
         return self._last
 
 
-class PhysicsSensorFusion(DepletionPredictor):
+class PhysicsSensorFusion(PhysicsBalance):
     """
     Physics balance corrected toward the sensor.
 
@@ -126,28 +137,19 @@ class PhysicsSensorFusion(DepletionPredictor):
     would import its faults.
 
     This is the version an engineer reaches for before reaching for ML, and
-    it is the one that usually wins.
+    it is the one that usually wins in a field. In the simulator the physics
+    half is already exact, so the correction can only pull it toward the
+    probe's bias.
     """
 
     name = "Physics + sensor fusion"
 
     def __init__(self, crop: Crop, soil: Soil, gain: float = 0.15) -> None:
-        self.crop, self.soil, self.gain = crop, soil, gain
-        self._depletion = 0.0
-
-    def reset(self) -> None:
-        self._depletion = 0.0
+        super().__init__(crop, soil)
+        self.gain = gain
 
     def predict(self, obs: Observation) -> float:
-        state = soil_water.step(
-            depletion_mm=self._depletion,
-            et0_mm=obs.et0_today_mm,
-            crop=self.crop, soil=self.soil,
-            root_depth_m=obs.root_depth_m, kc=obs.kc,
-            irrigation_mm=obs.irrigation_yesterday_mm,
-            rainfall_mm=obs.rainfall_yesterday_mm,
-        )
-        physics = state.depletion_mm
+        physics = super().predict(obs)
 
         if obs.sensor_vwc is not None:
             sensor_depletion = max(
@@ -201,8 +203,8 @@ class TabularModelPredictor(DepletionPredictor):
     in cost between them is then attributable to the learning algorithm and
     not to one of them quietly getting better inputs.
 
-    All of them see an `Observation` and nothing else, so the guarantee in
-    CLAUDE.md invariant 4 holds for the whole family at once.
+    All of them see an `Observation` and nothing else, so the guarantee that
+    no predictor reads the true state holds for the whole family at once.
     """
 
     requires_training = True

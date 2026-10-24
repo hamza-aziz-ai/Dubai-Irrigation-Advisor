@@ -242,7 +242,6 @@ def test_perfect_prediction_scores_r2_of_one():
 @pytest.mark.parametrize("cell", ["lstm", "gru"])
 def test_training_runs_and_is_deterministic(records, cell: S.CellType):
     """Tiny by design - this asserts the loop works, not that it works well."""
-    pytest.importorskip("torch")
     config = S.SequenceConfig(
         task="forecast", cell=cell, lookback_days=7,
         hidden_size=8, num_layers=1, max_epochs=2, patience=2, seed=0,
